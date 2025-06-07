@@ -1,0 +1,79 @@
+@startuml
+
+entity Users {
+    *email : string <<PK>>
+    --
+    *name : string
+    *password : string
+    *image_url : string
+    token : string
+}
+
+entity Categories {
+    *id : !int <<auto increment>> <<PK>>
+    --
+    *category_name : string
+    *type : string
+    description : text
+}
+
+entity Assets {
+    *id : int <<auto increment>> <<PK>>
+    --
+    *email_user : string <<FK>>
+    *asset_name : string
+    *asset_type : string
+    *first_amount : int
+    *current_amount : int
+}
+
+entity Transactions {
+    *id : int <<auto increment>> <<PK>>
+    --
+    *email_user : string <<FK>>
+    *id_category : int <<FK>>
+    *id_asset : int <<FK>>
+    *amount : int
+    *note : string
+    *date : datetime
+    type : string
+}
+
+entity Budgets {
+    *id : int <<auto increment>> <<PK>>
+    --
+    *email_user : string <<FK>>
+    *id_category : int <<FK>>
+    *amount : int
+    *first_period : datetime
+    *last_period : datetime
+}
+
+entity Histories {
+    *id : int <<auto increment>> <<PK>>
+    --
+    *email_user : string <<FK>>
+    *activity : string
+    *date : timestamp
+    platform : string
+}
+
+entity Reminders {
+    *id : int <<auto increment>> <<PK>>
+    --
+    *email_user : string <<FK>>
+    *description : text
+    *period : enum(one time, weekly, monthly, yearly)
+    *date : datetime
+}
+
+Transactions ||--o{ Categories : type
+Transactions ||--o{ Assets : for
+Users }o--|| Transactions : has
+Users ||--|| Assets : has
+Users }o--|| Budgets : has
+Budgets ||--|| Categories : for
+Users }o--|| Histories : has
+Users }o--|| Reminders : has
+
+@enduml

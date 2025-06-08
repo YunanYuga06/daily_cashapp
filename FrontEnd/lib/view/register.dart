@@ -1,7 +1,36 @@
+import 'package:daily_cashapp/service/api.service.dart';
 import 'package:flutter/material.dart';
+import '../models/user.model.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _registerUser() async {
+    final user = UserModel(
+      name: _nameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    final errorMessage = await ApiService.registerUser(user);
+
+    if (errorMessage == null) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +73,29 @@ class RegisterPage extends StatelessWidget {
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 30),
-            _inputField(label: "Nama", icon: Icons.person),
+            _inputField(
+              label: "Nama",
+              icon: Icons.person,
+              controller: _nameController,
+            ),
             const SizedBox(height: 16),
-            _inputField(label: "Email", icon: Icons.email),
+            _inputField(
+              label: "Email",
+              icon: Icons.email,
+              controller: _emailController,
+            ),
             const SizedBox(height: 16),
-            _inputField(label: "Password", icon: Icons.lock, obscure: true),
+            _inputField(
+              label: "Password",
+              icon: Icons.lock,
+              controller: _passwordController,
+              obscure: true,
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber[600],
                   foregroundColor: Colors.black,
@@ -69,9 +111,7 @@ class RegisterPage extends StatelessWidget {
             const SizedBox(height: 20),
             Center(
               child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
                 child: const Text(
                   "Sudah punya catatan? Masuk",
                   style: TextStyle(
@@ -91,9 +131,11 @@ class RegisterPage extends StatelessWidget {
   Widget _inputField({
     required String label,
     required IconData icon,
+    required TextEditingController controller,
     bool obscure = false,
   }) {
     return TextField(
+      controller: controller,
       obscureText: obscure,
       decoration: InputDecoration(
         prefixIcon: Icon(icon),

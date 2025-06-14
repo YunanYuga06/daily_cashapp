@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../service/api.service.dart'; // Pastikan file ini benar
 import 'register.dart';
+import '../pages/transaksi_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
       ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
 
       // Navigasi ke halaman berikutnya, misal Dashboard (ganti sesuai kebutuhan)
-      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardPage()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TransaksiPage()));
     } else {
       // Login gagal
       ScaffoldMessenger.of(

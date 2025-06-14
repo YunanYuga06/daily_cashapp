@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
+import '../service/api.service.dart'; // Pastikan file ini benar
 import 'register.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _loginUser() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    final error = await ApiService.loginUser(email, password);
+
+    if (error == null) {
+      // Login berhasil
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
+
+      // Navigasi ke halaman berikutnya, misal Dashboard (ganti sesuai kebutuhan)
+      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardPage()));
+    } else {
+      // Login gagal
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +45,6 @@ class LoginPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 60),
-            // Logo Placeholder
             Container(
               width: 100,
               height: 100,
@@ -42,14 +72,23 @@ class LoginPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            _inputField(label: "Email/Username", icon: Icons.email),
+            _inputField(
+              label: "Email",
+              icon: Icons.email,
+              controller: _emailController,
+            ),
             const SizedBox(height: 16),
-            _inputField(label: "Password", icon: Icons.lock, obscure: true),
+            _inputField(
+              label: "Password",
+              icon: Icons.lock,
+              controller: _passwordController,
+              obscure: true,
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: _loginUser,
                 icon: const Icon(Icons.arrow_forward, color: Colors.white),
                 label: const Text(
                   "Login",
@@ -95,9 +134,11 @@ class LoginPage extends StatelessWidget {
   Widget _inputField({
     required String label,
     required IconData icon,
+    required TextEditingController controller,
     bool obscure = false,
   }) {
     return TextField(
+      controller: controller,
       obscureText: obscure,
       decoration: InputDecoration(
         prefixIcon: Icon(icon),

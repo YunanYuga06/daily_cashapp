@@ -19,4 +19,24 @@ class ApiService {
       return "Error: ${response.body}";
     }
   }
+
+  static Future<String?> loginUser(String email, String password) async {
+    final url = Uri.parse('${Env.baseUrl}/users/login');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      // Bisa langsung return token kalau ingin pakai lokal variabel saja
+      final jsonResponse = jsonDecode(response.body);
+      final token = jsonResponse['data']['token'];
+      print("Token: $token");
+      return null;
+    } else {
+      return "Login gagal: ${response.body}";
+    }
+  }
 }

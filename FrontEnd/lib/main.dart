@@ -1,3 +1,4 @@
+import 'package:daily_cashapp/view/transaksi/halaman_transakasi.dart';
 import 'package:flutter/material.dart';
 import 'view/dashboard.dart';
 
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Daily Cash',
       debugShowCheckedModeBanner: false,
-      home: const DashboardPage(),
+      home: const HalamanTransaksi(),
     );
   }
 }

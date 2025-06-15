@@ -39,6 +39,7 @@ const login = async (request, res) => {
             email: loginRequest.email
         },
         select: {
+            name: true,
             email: true,
             password: true
         }
@@ -56,6 +57,7 @@ const login = async (request, res) => {
     const token = jwt.sign({username: user.email}, SECRET_KEY, {expiresIn: '1h'});
 
     return {
+        name: user.name,
         token: token
     };
 }

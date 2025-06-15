@@ -1,3 +1,3 @@
 class Env {
-  static const String baseUrl = 'https://3150-103-3-220-211.ngrok-free.app/api';
+  static const String baseUrl = 'https://018d-103-18-35-47.ngrok-free.app/api';
 }

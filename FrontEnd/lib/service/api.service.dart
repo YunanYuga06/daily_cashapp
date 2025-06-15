@@ -32,8 +32,9 @@ class ApiService {
     if (response.statusCode == 200) {
       // Bisa langsung return token kalau ingin pakai lokal variabel saja
       final jsonResponse = jsonDecode(response.body);
-      final token = jsonResponse['data']['token'];
-      print("Token: $token");
+      Env.token = jsonResponse["data"]["token"];
+
+      print("TOKEN= ${Env.token}");
       return null;
     } else {
       return "Login gagal: ${response.body}";

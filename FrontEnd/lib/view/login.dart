@@ -1,3 +1,4 @@
+import 'package:daily_cashapp/pages/main_page.dart';
 import 'package:flutter/material.dart';
 import '../service/api.service.dart'; // Pastikan file ini benar
 import 'register.dart';
@@ -20,15 +21,11 @@ class _LoginPageState extends State<LoginPage> {
     final error = await ApiService.loginUser(email, password);
 
     if (error == null) {
-      // Login berhasil
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
-
-      // Navigasi ke halaman berikutnya, misal Dashboard (ganti sesuai kebutuhan)
-      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardPage()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HalamanUtama()));
     } else {
-      // Login gagal
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error)));

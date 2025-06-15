@@ -1,13 +1,15 @@
 import userService from "../services/user.service.js";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-const test = async (req, res) => {
+export const test = async (req, res) => {
     console.log("HALLO");
     res.status(200).json({
         data: "HALLO"
-    })
+    });
 };
 
-const register = async (req, res, next) => {
+export const register = async (req, res, next) => {
     try {
         const result = await userService.register(req.body);
         res.status(200).json({
@@ -16,9 +18,9 @@ const register = async (req, res, next) => {
     } catch (e) {
         next(e);
     }
-}
+};
 
-const login = async (req, res, next) => {
+export const login = async (req, res, next) => {
     try {
         const result = await userService.login(req.body);
         res.status(200).json({
@@ -27,8 +29,20 @@ const login = async (req, res, next) => {
     } catch (e) {
         next(e);
     }
-}
+};
 
-export default {
-    test, register, login
-}
+export const getAllUsers = async (req, res, next) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                email: true,
+                name: true,
+                password: true,
+                image_url: true,
+            },
+        });
+        res.status(200).json({ data: users });
+    } catch (e) {
+        next(e);
+    }
+};

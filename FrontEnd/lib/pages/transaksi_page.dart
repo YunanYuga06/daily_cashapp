@@ -1,3 +1,6 @@
+import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
+import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
+import 'package:daily_cashapp/widgets/dahboard_tab.dart';
 import 'package:flutter/material.dart';
 
 import '../models/budget.dart';
@@ -68,9 +71,21 @@ class _TransaksiPageState extends State<TransaksiPage>
           const Center(child: Text('Halaman Harian')),
           const Center(child: Text('Halaman Bulanan')),
           BudgetTab(budget: _lunchBudget),
-          const Center(child: Text('Halaman Dashboard')),
+          DashboardTab(),
         ],
       ),
+
+      floatingActionButton: (_tabController.index == 0 || _tabController.index == 2)
+          ? FloatingActionButton(
+              onPressed: () {
+                if (_tabController.index == 0) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransaksi()));
+                } else {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAnggaran()));
+                }
+              },
+              child: const Icon(Icons.add),
+            ):null,
     );
   }
 }

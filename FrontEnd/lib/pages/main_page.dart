@@ -1,4 +1,5 @@
 import 'package:daily_cashapp/pages/transaksi_page.dart';
+import 'package:daily_cashapp/pages/aset_page.dart';
 import 'package:daily_cashapp/widgets/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
@@ -13,8 +14,8 @@ class _HalamanUtamaState extends State<HalamanUtama> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
-    TransaksiPage(), // <- ini halaman yang kamu kirim
-    Center(child: Text('Halaman Aset')),
+    TransaksiPage(),
+    HalamanAset(),
     Center(child: Text('Halaman Reminder')),
     Center(child: Text('Halaman Profil')),
   ];
@@ -22,10 +23,7 @@ class _HalamanUtamaState extends State<HalamanUtama> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,
         onTabChange: (index) {

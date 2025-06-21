@@ -1,6 +1,7 @@
 import 'package:daily_cashapp/pages/main_page.dart';
 import 'package:flutter/material.dart';
-import '../service/api.service.dart'; // Pastikan file ini benar
+import '../service/api.service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,18 +18,19 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginUser() async {
     final email = _emailController.text;
     final password = _passwordController.text;
-
-    final error = await ApiService.loginUser(email, password);
-
-    if (error == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
+    final token = await ApiService.loginUser(email, password);
+    if (token != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', token);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text("Login berhasil")));
+    
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HalamanUtama()));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text("Login gagal, email atau password salah.")));
     }
   }
 

@@ -21,7 +21,8 @@ model User {
   token     String?    @db.VarChar(255)
   budgets   Budget[]
   reminders Reminder[]
-  assets    Asset[] // Tambahkan relasi ke Asset
+  assets    Asset[]
+  transactions Transaction[]
 
   @@map("users")
 }
@@ -32,6 +33,7 @@ model Category {
   type        String   @db.VarChar(255) // 'income' or 'expense'
   description String?  @db.Text
   budgets     Budget[]
+  transactions Transaction[]
 }
 
 model Asset {
@@ -43,23 +45,24 @@ model Asset {
   first_amount   Int
   current_amount Int
   budgets        Budget[]
+  transactions Transaction[]
 
   @@map("assets")
 }
 
 model Budget {
-  id           Int      @id @default(autoincrement())
-  user         User     @relation(fields: [email_user], references: [email])
-  email_user   String   @db.VarChar(255)
-  category     Category @relation(fields: [id_category], references: [id])
-  id_category  Int
-  amount       Int
+  id          Int      @id @default(autoincrement())
+  email_user  String   @db.VarChar(255)
+  id_category Int
+  amount      Int
   first_period DateTime @db.Date
   last_period  DateTime @db.Date
+  id_asset    Int?
+  note        String?  // <-- TAMBAHKAN BARIS INI
 
-  // Relasi opsional ke tabel Asset
-  asset        Asset?   @relation(fields: [id_asset], references: [id])
-  id_asset     Int?
+  user     User      @relation(fields: [email_user], references: [email])
+  category Category  @relation(fields: [id_category], references: [id])
+  asset    Asset?    @relation(fields: [id_asset], references: [id])
 }
 
 model Reminder {
@@ -69,4 +72,21 @@ model Reminder {
   description String   @db.Text
   period      String   // one_time, weekly, monthly, yearly
   date        DateTime @db.Date
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  email_user  String   @db.VarChar(255)
+  id_category Int
+  id_asset    Int?     
+  amount      Int      
+  type        String   
+  description String?  
+  date        DateTime @db.Date 
+
+  user     User     @relation(fields: [email_user], references: [email])
+  category Category @relation(fields: [id_category], references: [id])
+  asset    Asset?   @relation(fields: [id_asset], references: [id])
+
+  @@map("transactions")
 }

@@ -7,10 +7,9 @@ import {
     updateBudgetValidation
 } from "../validations/budget.validation.js";
 
-const create = async (user, request) => {
-    const budget = validate(createBudgetValidation, request);
-    budget.email_user = user.email;
 
+
+const create = async (user, request) => {
     return prismaClient.budget.create({
         data: budget,
         select: {
@@ -23,18 +22,23 @@ const create = async (user, request) => {
                     id: true,
                     name: true
                 }
+            },
+            asset: {
+                select: {
+                    id: true,
+                    asset_name: true
+                }
             }
         }
     });
 }
 
-const get = async (user, budgetId) => {
-    const id = validate(getBudgetValidation, { id: budgetId });
 
+const get = async (user, budgetId) => {
     const budget = await prismaClient.budget.findFirst({
         where: {
             id: id.id,
-            email_user: user.email
+            email_user: user.username
         },
         select: {
             id: true,
@@ -46,21 +50,24 @@ const get = async (user, budgetId) => {
                     id: true,
                     name: true
                 }
+            },
+            asset: {
+                select: {
+                    id: true,
+                    asset_name: true
+                }
             }
         }
     });
-
-    if (!budget) {
-        throw new ResponseError(404, "Budget not found");
-    }
-
+    // ...
     return budget;
 }
+
 
 const getAll = async (user) => {
     return prismaClient.budget.findMany({
         where: {
-            email_user: user.email
+            email_user: user.username
         },
         select: {
             id: true,
@@ -71,6 +78,13 @@ const getAll = async (user) => {
                 select: {
                     id: true,
                     name: true
+                }
+            },
+            // TAMBAHKAN BLOK DI BAWAH INI
+            asset: {
+                select: {
+                    id: true,
+                    asset_name: true
                 }
             }
         }

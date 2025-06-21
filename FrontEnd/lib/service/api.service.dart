@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/user.model.dart';
 import '../models/asset_model.dart';
 import '../models/budget.dart';
+import '../models/transaksi_model.dart';
 
 class ApiService {
   static Future<String?> registerUser(UserModel user) async {
@@ -11,7 +12,8 @@ class ApiService {
 
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode(user.toJson()),
     );
 
@@ -29,7 +31,8 @@ class ApiService {
 
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode({'email': email, 'password': password}),
     );
 
@@ -45,13 +48,14 @@ class ApiService {
   }
 
   static Future<List<BudgetModel>> getBudgets(String token) async {
-    final url = Uri.parse('${Env.baseUrl}/api/budgets');
+    final url = Uri.parse('${Env.baseUrl}/budgets');
 
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
       },
     );
 
@@ -72,7 +76,7 @@ class ApiService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    final url = Uri.parse('${Env.baseUrl}/api/budgets');
+    final url = Uri.parse('${Env.baseUrl}/budgets');
     final body = {
       'id_category': categoryId,
       'amount': amount,
@@ -91,6 +95,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: jsonEncode(body),
     );
@@ -101,14 +106,14 @@ class ApiService {
   }
 
   static Future<List<Category>> getCategories(String token) async {
-    final url = Uri.parse('${Env.baseUrl}/api/categories');
+    final url = Uri.parse('${Env.baseUrl}/categories');
     final response = await http.get(
       url,
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
     );
 
     if (response.statusCode == 200) {
-      // Kuncinya ada di sini -> ['data']
       final List<dynamic> jsonList = json.decode(response.body)['data'];
       return jsonList.map((json) => Category.fromJson(json)).toList();
     } else {
@@ -117,18 +122,36 @@ class ApiService {
   }
 
   static Future<List<AssetModel>> getAssets(String token) async {
-    final url = Uri.parse('${Env.baseUrl}/api/assets');
+    final url = Uri.parse('${Env.baseUrl}/assets');
     final response = await http.get(
       url,
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
+      
     );
 
     if (response.statusCode == 200) {
-      // Kuncinya ada di sini -> ['data']
       final List<dynamic> jsonList = json.decode(response.body)['data'];
       return jsonList.map((json) => AssetModel.fromJson(json)).toList();
     } else {
       throw Exception('Gagal memuat aset. Status: ${response.statusCode}');
+    }
+  }
+
+  static Future<SummaryModel> getSummary(String token, DateTime date) async {
+    final url = Uri.parse('${Env.baseUrl}/transactions/summary?year=${date.year}&month=${date.month}');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return summaryModelFromJson(response.body);
+    } else {
+      throw Exception('Gagal memuat ringkasan: ${response.body}');
     }
   }  
 }

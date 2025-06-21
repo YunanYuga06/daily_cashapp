@@ -1,2 +1,0 @@
-DATABASE_URL="mysql://root@localhost:3306/daily_cashapp"
-SECRET_KEY=rahasia_super_aman_123

@@ -3,7 +3,7 @@ import { prismaClient } from "../application/database.js";
 const getAll = async (user) => {
     return prismaClient.asset.findMany({
         where: {
-            email_user: user.email
+            email_user: user.username
         },
         select: {
             id: true,

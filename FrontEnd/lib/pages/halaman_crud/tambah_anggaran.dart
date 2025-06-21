@@ -17,15 +17,15 @@ class _AddAnggaranState extends State<AddAnggaran> {
   final _totalController = TextEditingController();
   final _catatanController = TextEditingController();
 
-  // State untuk menampung data dari form dan API
+
   DateTimeRange? _selectedDateRange;
   Category? _selectedCategory;
   AssetModel? _selectedAsset;
   List<Category> _categories = [];
   List<AssetModel> _assets = [];
   
-  bool _isLoading = true; // Untuk menampilkan loading indicator
-  bool _isSaving = false; // Untuk menonaktifkan tombol saat menyimpan
+  bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -39,44 +39,25 @@ class _AddAnggaranState extends State<AddAnggaran> {
     _catatanController.dispose();
     super.dispose();
   }
-  // lib/pages/halaman_crud/tambah_anggaran.dart
-// ...
 
   Future<void> _fetchInitialData() async {
     setState(() { _isLoading = true; });
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      
-      print("--- [DEBUG] Memulai proses ambil data ---");
 
       if (token == null || token.isEmpty) {
         throw Exception("Token tidak ditemukan, silakan login kembali.");
       }
-      print("--- [DEBUG] Token ditemukan: $token");
 
-      // Kita panggil satu per satu untuk debug yang lebih mudah
       final fetchedCategories = await ApiService.getCategories(token);
-      print("--- [DEBUG] Panggilan getCategories selesai ---");
-      print("--- [DEBUG] Jumlah kategori diterima: ${fetchedCategories.length}");
-      if (fetchedCategories.isNotEmpty) {
-        print("--- [DEBUG] Contoh kategori pertama: ${fetchedCategories.first.name}");
-      }
-      
       final fetchedAssets = await ApiService.getAssets(token);
-      print("--- [DEBUG] Panggilan getAssets selesai ---");
-      print("--- [DEBUG] Jumlah aset diterima: ${fetchedAssets.length}");
-      if (fetchedAssets.isNotEmpty) {
-        print("--- [DEBUG] Contoh aset pertama: ${fetchedAssets.first.assetName}");
-      }
       
-      // Jika semua berhasil, baru update state
       if (mounted) {
         setState(() {
           _categories = fetchedCategories;
           _assets = fetchedAssets;
           _isLoading = false;
-          print("--- [DEBUG] SetState berhasil, UI akan di-refresh ---");
         });
       }
 
@@ -84,13 +65,12 @@ class _AddAnggaranState extends State<AddAnggaran> {
       if (mounted) {
         setState(() { _isLoading = false; });
       }
-      // Print error yang sebenarnya terjadi
-      print("--- [DEBUG] TERJADI ERROR SAAT FETCH DATA: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal memuat data: $e')),
       );
     }
   }
+
   void _pickDateRange() async {
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
@@ -110,9 +90,8 @@ class _AddAnggaranState extends State<AddAnggaran> {
     }
   }
 
-  // Fungsi yang dipanggil saat tombol SIMPAN ditekan
   Future<void> _simpanAnggaran() async {
-    if (_isSaving) return; // Mencegah klik ganda
+    if (_isSaving) return;
 
     if (_formKey.currentState!.validate()) {
       if (_selectedDateRange == null || _selectedCategory == null) {
@@ -133,7 +112,7 @@ class _AddAnggaranState extends State<AddAnggaran> {
           token: token,
           categoryId: _selectedCategory!.id,
           amount: int.parse(_totalController.text.replaceAll('.', '')),
-          assetId: _selectedAsset?.id, // Kirim id aset jika dipilih
+          assetId: _selectedAsset?.id,
           note: _catatanController.text,
           startDate: _selectedDateRange!.start,
           endDate: _selectedDateRange!.end,
@@ -142,7 +121,7 @@ class _AddAnggaranState extends State<AddAnggaran> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Anggaran berhasil disimpan!')),
         );
-        Navigator.pop(context, true); // Kembali & kirim sinyal untuk refresh
+        Navigator.pop(context, true);
 
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +147,6 @@ class _AddAnggaranState extends State<AddAnggaran> {
     );
   }
 
-  // Widget untuk membangun Form utama
   Widget buildForm() {
     return Form(
       key: _formKey,
@@ -234,7 +212,6 @@ class _AddAnggaranState extends State<AddAnggaran> {
     );
   }
 
-  // Widget untuk field tanggal
   Widget _buildDateField() {
     final dateFormat = DateFormat('d MMM yyyy', 'id');
     final String dateText = _selectedDateRange == null
@@ -255,7 +232,6 @@ class _AddAnggaranState extends State<AddAnggaran> {
     );
   }
 
-  // Widget untuk dropdown kategori
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<Category>(
       value: _selectedCategory,
@@ -280,7 +256,6 @@ class _AddAnggaranState extends State<AddAnggaran> {
     );
   }
 
-  // Widget untuk dropdown aset
   Widget _buildAssetDropdown() {
     return DropdownButtonFormField<AssetModel>(
       value: _selectedAsset,

@@ -17,13 +17,13 @@ class _TransaksiPageState extends State<TransaksiPage>
   DateTime _currentMonth = DateTime.now();
   late final TabController _tabController;
 
-  // --- VARIABEL _lunchBudget DIHAPUS DARI SINI ---
+  var _budgetTabKey = UniqueKey();
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    // Tambahkan listener agar FloatingActionButton bisa muncul/hilang dengan benar
     _tabController.addListener(() {
       setState(() {});
     });
@@ -53,6 +53,20 @@ class _TransaksiPageState extends State<TransaksiPage>
     });
   }
 
+  Future<void> _navigateAndRefresh() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddAnggaran()),
+    );
+
+    if (result == true) {
+      setState(() {
+        _budgetTabKey = UniqueKey();
+      });
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,7 +81,8 @@ class _TransaksiPageState extends State<TransaksiPage>
         children: [
           const Center(child: Text('Halaman Harian')),
           const Center(child: Text('Halaman Bulanan')),
-          const BudgetTab(),
+          // --- LANGKAH 2.2: Hapus 'const' dan gunakan Key ---
+          BudgetTab(key: _budgetTabKey),
           const DashboardTab(),
         ],
       ),
@@ -81,10 +96,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                           MaterialPageRoute(
                               builder: (_) => const AddTransaksi()));
                     } else {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const AddAnggaran()));
+                      _navigateAndRefresh();
                     }
                   },
                   child: const Icon(Icons.add),

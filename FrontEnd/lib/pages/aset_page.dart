@@ -6,7 +6,6 @@ class HalamanAset extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
       body: SafeArea(
         child: Column(
           children: [

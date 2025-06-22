@@ -8,7 +8,6 @@ class TambahAsetPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text('Tambah Aset', style: TextStyle(color: Colors.black)),

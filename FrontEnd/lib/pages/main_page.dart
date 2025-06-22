@@ -1,6 +1,6 @@
+import 'package:daily_cashapp/pages/profile_page.dart';
 import 'package:daily_cashapp/pages/transaksi_page.dart';
 import 'package:daily_cashapp/pages/aset_page.dart';
-import 'package:daily_cashapp/pages/profil_page.dart';
 import 'package:daily_cashapp/widgets/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 

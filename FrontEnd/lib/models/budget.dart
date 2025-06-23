@@ -1,5 +1,8 @@
+// daily_cashapp/FrontEnd/lib/models/budget.dart
+
 import 'asset_model.dart';
 import 'dart:convert';
+
 List<BudgetModel> budgetModelFromJson(String str) =>
     List<BudgetModel>.from(json.decode(str)['data'].map((x) => BudgetModel.fromJson(x)));
 
@@ -8,14 +11,17 @@ class Category {
     Category({
         required this.id,
         required this.name,
+        required this.type, // PERUBAHAN PENTING: Tambahkan 'type' di konstruktor
     });
 
     final int id;
     final String name;
+    final String type; // PERUBAHAN PENTING: Deklarasikan properti 'type' di sini
 
     factory Category.fromJson(Map<String, dynamic> json) => Category(
         id: json["id"],
         name: json["name"],
+        type: json["type"], // PERUBAHAN PENTING: Ambil nilai 'type' dari JSON
     );
 }
 

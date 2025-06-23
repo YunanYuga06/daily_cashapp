@@ -1,5 +1,9 @@
+// daily_cashapp/FrontEnd/lib/pages/transaksi_page.dart
+
 import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
+import 'package:daily_cashapp/pages/transaksi_bulanan.dart';
+import 'package:daily_cashapp/pages/transaksi_harian.dart';
 import 'package:daily_cashapp/widgets/dahboard_tab.dart';
 import 'package:flutter/material.dart';
 import '../widgets/budget_tab.dart';
@@ -79,8 +83,8 @@ class _TransaksiPageState extends State<TransaksiPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          const Center(child: Text('Halaman Harian')),
-          const Center(child: Text('Halaman Bulanan')),
+          TransaksiHarian(), // HAPUS 'const' DI SINI
+          TransaksiBulanan(), // HAPUS 'const' DI SINI
           // --- LANGKAH 2.2: Hapus 'const' dan gunakan Key ---
           BudgetTab(key: _budgetTabKey),
           const DashboardTab(),
@@ -94,7 +98,7 @@ class _TransaksiPageState extends State<TransaksiPage>
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const AddTransaksi()));
+                              builder: (_) => TambahTransaksi())); // HAPUS 'const' DI SINI
                     } else {
                       _navigateAndRefresh();
                     }

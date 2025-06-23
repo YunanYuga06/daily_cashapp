@@ -1,3 +1,5 @@
+// daily_cashapp/FrontEnd/lib/service/api.service.dart
+
 import 'dart:convert';
 import 'package:daily_cashapp/config/env.dart';
 import 'package:http/http.dart' as http;
@@ -64,9 +66,8 @@ class ApiService {
     } else {
       throw Exception('Gagal memuat budgets: ${response.body}');
     }
-
-    
   }
+
   static Future<void> createBudget({
     required String token,
     required int categoryId,
@@ -127,7 +128,6 @@ class ApiService {
       url,
       headers: {'Authorization': 'Bearer $token',
       'ngrok-skip-browser-warning': 'true',},
-      
     );
 
     if (response.statusCode == 200) {
@@ -153,5 +153,45 @@ class ApiService {
     } else {
       throw Exception('Gagal memuat ringkasan: ${response.body}');
     }
-  }  
+  }
+
+  // BARIS BARU: Menambahkan fungsi untuk membuat transaksi
+  static Future<String?> createTransaction({
+    required String token,
+    required int categoryId,
+    required int amount,
+    int? assetId,
+    String? description,
+    required DateTime date,
+    required String type, // 'income' or 'expense'
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/transactions');
+    final body = {
+      'id_category': categoryId,
+      'amount': amount,
+      'description': description,
+      'date': date.toIso8601String().substring(0, 10), // Hanya kirim tanggal (YYYY-MM-DD)
+      'type': type,
+    };
+    if (assetId != null) {
+      body['id_asset'] = assetId;
+    }
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return null; // Berhasil, tidak ada error message
+    } else {
+      final errorBody = jsonDecode(response.body);
+      return "Error: ${errorBody['errors'] ?? 'Gagal menyimpan transaksi'}";
+    }
+  }
 }

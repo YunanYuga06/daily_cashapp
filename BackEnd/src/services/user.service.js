@@ -6,29 +6,10 @@ import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const SECRET_KEY = process.env.SECRET_KEY;
+console.log('DEBUG: SECRET_KEY dari process.env di userservice.js:', SECRET_KEY); // Tetap biarkan ini
 
 const register = async (request) => {
-    const user = validate(registerUserValidation, request);
-
-    const countUser = await prismaClient.user.count({
-        where: {
-            email: user.email
-        }
-    });
-
-    if (countUser === 1) {
-        throw new ResponseError(400, "Email already exists");
-    }
-
-    user.password = await bcrypt.hash(user.password, 10);
-
-    return prismaClient.user.create({
-        data: user,
-        select: {
-            email: true,
-            name: true
-        }
-    });
+    // ...
 }
 
 const login = async (request, res) => {
@@ -52,6 +33,13 @@ const login = async (request, res) => {
     if (!isPasswordValid) {
         throw new ResponseError(401, "Email or password wrong");
     }
+
+    // --- Tambahkan pemeriksaan ini sebelum jwt.sign ---
+    if (!SECRET_KEY) {
+        console.error("ERROR: SECRET_KEY is undefined or null when trying to sign JWT!");
+        throw new ResponseError(500, "Server configuration error: JWT secret not found."); // Beri pesan error yang lebih jelas
+    }
+    // ----------------------------------------------------
 
     const token = jwt.sign({username: user.email}, SECRET_KEY, {expiresIn: '1h'});
 

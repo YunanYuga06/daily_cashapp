@@ -1,5 +1,7 @@
 import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
+import 'package:daily_cashapp/pages/transaksi/transaksi_bulanan.dart';
+import 'package:daily_cashapp/pages/transaksi/transaksi_harian.dart';
 import 'package:daily_cashapp/widgets/dahboard_tab.dart';
 import 'package:flutter/material.dart';
 
@@ -68,8 +70,8 @@ class _TransaksiPageState extends State<TransaksiPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          const Center(child: Text('Halaman Harian')),
-          const Center(child: Text('Halaman Bulanan')),
+          TransaksiHarian(),
+          TransaksiBulanan(),
           BudgetTab(budget: _lunchBudget),
           DashboardTab(),
         ],

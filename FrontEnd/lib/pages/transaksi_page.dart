@@ -1,9 +1,7 @@
-import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
+import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:daily_cashapp/widgets/dahboard_tab.dart';
 import 'package:flutter/material.dart';
-
-import '../models/budget.dart';
 import '../widgets/budget_tab.dart';
 import '../widgets/app_bar.dart';
 
@@ -19,17 +17,16 @@ class _TransaksiPageState extends State<TransaksiPage>
   DateTime _currentMonth = DateTime.now();
   late final TabController _tabController;
 
-  final Budget _lunchBudget = Budget(
-    category: 'Buat Makan',
-    total: 500000,
-    spent: 150000,
-    dailyLimit: 20000,
-  );
+  var _budgetTabKey = UniqueKey();
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -56,6 +53,20 @@ class _TransaksiPageState extends State<TransaksiPage>
     });
   }
 
+  Future<void> _navigateAndRefresh() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddAnggaran()),
+    );
+
+    if (result == true) {
+      setState(() {
+        _budgetTabKey = UniqueKey();
+      });
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,22 +81,27 @@ class _TransaksiPageState extends State<TransaksiPage>
         children: [
           const Center(child: Text('Halaman Harian')),
           const Center(child: Text('Halaman Bulanan')),
-          BudgetTab(budget: _lunchBudget),
-          DashboardTab(),
+          // --- LANGKAH 2.2: Hapus 'const' dan gunakan Key ---
+          BudgetTab(key: _budgetTabKey),
+          const DashboardTab(),
         ],
       ),
-
-      floatingActionButton: (_tabController.index == 0 || _tabController.index == 2)
-          ? FloatingActionButton(
-              onPressed: () {
-                if (_tabController.index == 0) {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransaksi()));
-                } else {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAnggaran()));
-                }
-              },
-              child: const Icon(Icons.add),
-            ):null,
+      floatingActionButton:
+          (_tabController.index == 0 || _tabController.index == 2)
+              ? FloatingActionButton(
+                  onPressed: () {
+                    if (_tabController.index == 0) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AddTransaksi()));
+                    } else {
+                      _navigateAndRefresh();
+                    }
+                  },
+                  child: const Icon(Icons.add),
+                )
+              : null,
     );
   }
 }

@@ -6,14 +6,11 @@ import cors from 'cors';
 
 export const web = express();
 
-// 1. Middleware Dasar (didaftarkan satu kali di atas)
 web.use(cors());
 web.use(express.json());
 web.use(express.urlencoded({ extended: true }));
 
-// 2. Semua Router (publik dulu, baru privat)
 web.use(publicRouter);
-web.use(privateRouter); // Sekarang Express tahu tentang /api/categories
+web.use(privateRouter);
 
-// 3. Error Middleware (WAJIB paling terakhir)
 web.use(errorMiddleware);

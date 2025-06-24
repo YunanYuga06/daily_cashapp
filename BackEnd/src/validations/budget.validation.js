@@ -10,17 +10,17 @@ const createBudgetValidation = Joi.object({
 });
 
 const updateBudgetValidation = Joi.object({
-    id: Joi.number().positive().required(),
-    id_category: Joi.number().optional(),
-    amount: Joi.number().positive().optional(),
-    first_period: Joi.date().optional(),
-    last_period: Joi.date().optional()
+    id_category: Joi.number().required(),
+    amount: Joi.number().positive().required(),
+    first_period: Joi.date().required(),
+    last_period: Joi.date().required(),
+    id_asset: Joi.number().optional().allow(null),
+    note: Joi.string().optional().allow('').allow(null)
 });
 
 const getBudgetValidation = Joi.object({
     id: Joi.number().positive().required()
 });
-
 
 export {
     createBudgetValidation,

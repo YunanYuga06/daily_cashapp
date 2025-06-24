@@ -1,3 +1,5 @@
+// lib/pages/transaksi_page.dart
+
 import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:daily_cashapp/widgets/dahboard_tab.dart';
@@ -14,11 +16,8 @@ class TransaksiPage extends StatefulWidget {
 
 class _TransaksiPageState extends State<TransaksiPage>
     with SingleTickerProviderStateMixin {
-  DateTime _currentMonth = DateTime.now();
+  DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
   late final TabController _tabController;
-
-  var _budgetTabKey = UniqueKey();
-
 
   @override
   void initState() {
@@ -37,35 +36,27 @@ class _TransaksiPageState extends State<TransaksiPage>
 
   void _incrementMonth() {
     setState(() {
-      _currentMonth = DateTime(
-        _currentMonth.year,
-        _currentMonth.month + 1,
-      );
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
     });
   }
 
   void _decrementMonth() {
     setState(() {
-      _currentMonth = DateTime(
-        _currentMonth.year,
-        _currentMonth.month - 1,
-      );
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
     });
   }
 
-  Future<void> _navigateAndRefresh() async {
+  Future<void> _navigateAndRefreshBudget() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AddAnggaran()),
     );
-
-    if (result == true) {
+    if (result == true && mounted) {
       setState(() {
-        _budgetTabKey = UniqueKey();
+        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -81,23 +72,17 @@ class _TransaksiPageState extends State<TransaksiPage>
         children: [
           const Center(child: Text('Halaman Harian')),
           const Center(child: Text('Halaman Bulanan')),
-          // --- LANGKAH 2.2: Hapus 'const' dan gunakan Key ---
-          BudgetTab(key: _budgetTabKey),
-          const DashboardTab(),
+          BudgetTab(currentMonth: _currentMonth),
+          DashboardTab(currentMonth: _currentMonth),
         ],
       ),
       floatingActionButton:
-          (_tabController.index == 0 || _tabController.index == 2)
+          (_tabController.index == 2)
               ? FloatingActionButton(
                   onPressed: () {
-                    if (_tabController.index == 0) {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const AddTransaksi()));
-                    } else {
-                      _navigateAndRefresh();
-                    }
+                    if (_tabController.index == 2) {
+                      _navigateAndRefreshBudget();
+                    } 
                   },
                   child: const Icon(Icons.add),
                 )

@@ -24,6 +24,7 @@ class BudgetModel {
     BudgetModel({
         required this.id,
         required this.amount,
+        required this.spent,
         required this.firstPeriod,
         required this.lastPeriod,
         required this.category,
@@ -32,6 +33,7 @@ class BudgetModel {
 
     final int id;
     final int amount;
+    final int spent;
     final DateTime firstPeriod;
     final DateTime lastPeriod;
     final Category category;
@@ -40,6 +42,7 @@ class BudgetModel {
     factory BudgetModel.fromJson(Map<String, dynamic> json) => BudgetModel(
         id: json["id"],
         amount: json["amount"],
+        spent: json["spent"] ?? 0, // <-- TAMBAHKAN INI
         firstPeriod: DateTime.parse(json["first_period"]),
         lastPeriod: DateTime.parse(json["last_period"]),
         category: Category.fromJson(json["category"]),

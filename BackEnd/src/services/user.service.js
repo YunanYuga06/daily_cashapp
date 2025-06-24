@@ -60,6 +60,46 @@ const login = async (request, res) => {
     };
 }
 
+const get = async (userEmail) => {
+    const user = await prismaClient.user.findUnique({
+        where: { email: userEmail },
+        select: {
+            name: true,
+            email: true,
+            image_url: true,
+        }
+    });
+
+    if (!user) {
+        throw new ResponseError(404, "User tidak ditemukan");
+    }
+    return user;
+}
+
+const update = async (userEmail, request) => {
+    const dataToUpdate = {};
+    if (request.name) {
+        dataToUpdate.name = request.name;
+    }
+    if (request.image_url) {
+        dataToUpdate.image_url = request.image_url;
+    }
+
+    if (Object.keys(dataToUpdate).length === 0) {
+        throw new ResponseError(400, "Tidak ada data yang diperbarui");
+    }
+
+    return prismaClient.user.update({
+        where: { email: userEmail },
+        data: dataToUpdate,
+        select: {
+            name: true,
+            email: true,
+            image_url: true
+        }
+    });
+}
+
 export default {
-    register, login
+    register, login, get, update
 }

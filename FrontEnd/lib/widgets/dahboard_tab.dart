@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaksi_model.dart';
 import '../service/api.service.dart';
 
-
 class _SectionData {
   final String name;
   final double percent;
@@ -14,7 +13,8 @@ class _SectionData {
 }
 
 class DashboardTab extends StatefulWidget {
-  const DashboardTab({Key? key}) : super(key: key);
+  final DateTime currentMonth;
+  const DashboardTab({Key? key, required this.currentMonth}) : super(key: key);
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();
@@ -23,22 +23,6 @@ class DashboardTab extends StatefulWidget {
 class _DashboardTabState extends State<DashboardTab> {
   Future<SummaryModel>? _summaryFuture;
   int _selectedChart = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSummary();
-  }
-
-  Future<void> _fetchSummary() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    if (token != null && mounted) {
-      setState(() {
-        _summaryFuture = ApiService.getSummary(token, DateTime.now());
-      });
-    }
-  }
 
   final NumberFormat _cur = NumberFormat.currency(
     locale: 'id',
@@ -50,6 +34,35 @@ class _DashboardTabState extends State<DashboardTab> {
   final List<Color> _expenseColors = [ Colors.red, Colors.orange, Colors.green, Colors.brown ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchSummary();
+  }
+
+  // 2. Method ini akan terpanggil setiap kali `currentMonth` dari parent berubah
+  @override
+  void didUpdateWidget(DashboardTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Cek apakah bulan atau tahunnya berbeda
+    if (oldWidget.currentMonth.month != widget.currentMonth.month ||
+        oldWidget.currentMonth.year != widget.currentMonth.year) {
+      // Jika berbeda, ambil ulang data ringkasan untuk bulan yang baru
+      _fetchSummary();
+    }
+  }
+
+  Future<void> _fetchSummary() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null && mounted) {
+      setState(() {
+        // 3. Gunakan `widget.currentMonth` untuk mengambil data, bukan DateTime.now()
+        _summaryFuture = ApiService.getSummary(token, widget.currentMonth);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<SummaryModel>(
       future: _summaryFuture,
@@ -58,7 +71,7 @@ class _DashboardTabState extends State<DashboardTab> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
+          return Center(child: Text('Gagal memuat data ringkasan: ${snapshot.error}'));
         }
         if (!snapshot.hasData) {
           return const Center(child: Text('Tidak ada data transaksi.'));
@@ -71,7 +84,8 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildDashboardContent(SummaryModel summary) {
-    final monthLabel = DateFormat.yMMMM('id').format(DateTime.now());
+    final monthLabel = DateFormat.yMMMM('id').format(widget.currentMonth);
+    
     final totalIncomeForChart = summary.totalIncome == 0 ? 1 : summary.totalIncome;
     final incomeChartData = summary.incomeByCategory.map((e) {
         final percent = (e.totalAmount / totalIncomeForChart) * 100;

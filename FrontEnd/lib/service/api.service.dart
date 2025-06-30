@@ -109,6 +109,7 @@ class ApiService {
     required int amount,
     int? assetId,
     String? note,
+    String? priority,
     required DateTime startDate,
     required DateTime endDate,
   }) async {
@@ -116,6 +117,7 @@ class ApiService {
     final body = {
       'id_category': categoryId,
       'amount': amount,
+      'priority': priority,
       'first_period': startDate.toIso8601String(),
       'last_period': endDate.toIso8601String(),
     };

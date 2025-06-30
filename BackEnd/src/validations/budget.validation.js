@@ -3,6 +3,7 @@ import Joi from "joi";
 const createBudgetValidation = Joi.object({
     id_category: Joi.number().required(),
     amount: Joi.number().positive().required(),
+    priority: Joi.string().optional().allow(''),
     first_period: Joi.date().required(),
     last_period: Joi.date().required(),
     id_asset: Joi.number().optional().allow(null),
@@ -12,6 +13,7 @@ const createBudgetValidation = Joi.object({
 const updateBudgetValidation = Joi.object({
     id_category: Joi.number().required(),
     amount: Joi.number().positive().required(),
+    priority: Joi.string().optional().allow(''),
     first_period: Joi.date().required(),
     last_period: Joi.date().required(),
     id_asset: Joi.number().optional().allow(null),

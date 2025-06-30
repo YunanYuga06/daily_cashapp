@@ -16,6 +16,7 @@ class _AddAnggaranState extends State<AddAnggaran> {
   final _formKey = GlobalKey<FormState>();
   final _totalController = TextEditingController();
   final _catatanController = TextEditingController();
+  final _priorityController = TextEditingController();
 
 
   DateTimeRange? _selectedDateRange;
@@ -112,6 +113,7 @@ class _AddAnggaranState extends State<AddAnggaran> {
           token: token,
           categoryId: _selectedCategory!.id,
           amount: int.parse(_totalController.text.replaceAll('.', '')),
+          priority: _priorityController.text,
           assetId: _selectedAsset?.id,
           note: _catatanController.text,
           startDate: _selectedDateRange!.start,
@@ -165,6 +167,16 @@ class _AddAnggaranState extends State<AddAnggaran> {
               labelText: 'Catatan (Opsional)',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.note_alt_outlined),
+            ),
+            textCapitalization: TextCapitalization.sentences,
+          ),
+          const SizedBox(height: 20),
+          TextFormField(
+            controller: _priorityController,
+            decoration: const InputDecoration(
+              labelText: 'Prioritas',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.flag_sharp),
             ),
             textCapitalization: TextCapitalization.sentences,
           ),

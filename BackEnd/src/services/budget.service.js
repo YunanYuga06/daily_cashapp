@@ -10,13 +10,20 @@ import {
 
 
 const create = async (user, request) => {
+    const budgetRequest = validate(createBudgetValidation, request);
+    const dataToCreate = {
+        ...budgetRequest,
+        email_user: user.username,
+    };
+
     return prismaClient.budget.create({
-        data: budget,
+        data: dataToCreate,
         select: {
             id: true,
             amount: true,
             first_period: true,
             last_period: true,
+            priority: true,
             category: {
                 select: {
                     id: true,
@@ -31,7 +38,7 @@ const create = async (user, request) => {
             }
         }
     });
-}
+};
 
 
 const get = async (user, budgetId) => {
@@ -40,6 +47,7 @@ const get = async (user, budgetId) => {
         select: {
             id: true, amount: true, first_period: true, last_period: true,
             id_category: true, id_asset: true,
+            priority:true,
             category: { select: { id: true, name: true } },
             asset: { select: { id: true, asset_name: true } }
         }
@@ -80,6 +88,7 @@ const getAll = async (user, year, month) => {
         select: {
             id: true, amount: true, first_period: true, last_period: true,
             id_category: true, id_asset: true,
+            priority:true,
             category: { select: { id: true, name: true } },
             asset: { select: { id: true, asset_name: true } }
         }
@@ -126,6 +135,7 @@ const update = async (user, budgetId, request) => {
         select: {
             id: true,
             amount: true,
+            priority:true,
             category: { select: { name: true } }
         }
     });

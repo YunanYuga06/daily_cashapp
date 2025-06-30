@@ -219,6 +219,13 @@ class _BudgetTabState extends State<BudgetTab> {
                       Text(currencyFormatter.format(dailyLimit)),
                     ],
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Prioritas'),
+                      Text(budget.priority),
+                    ],
+                  ),
                 ],
               ),
             ),

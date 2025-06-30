@@ -1,10 +1,17 @@
-// daily_cashapp-Yunan-Backend/BackEnd/src/services/asset.service.js
 import { prismaClient } from "../application/database.js";
 import { validate } from "../validations/validation.js";
 import { createAssetValidation } from "../validations/asset.validation.js";
 
 const getAll = async (user) => {
-  // ... (fungsi getAll yang sudah ada)
+  return prismaClient.asset.findMany({
+    where: {
+      email_user: user.username
+    },
+    select: {
+      id: true,
+      asset_name: true,
+    }
+  });
 };
 
 const create = async (user, request) => {

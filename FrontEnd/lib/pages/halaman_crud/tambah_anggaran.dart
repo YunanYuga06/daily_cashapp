@@ -16,8 +16,10 @@ class _AddAnggaranState extends State<AddAnggaran> {
   final _formKey = GlobalKey<FormState>();
   final _totalController = TextEditingController();
   final _catatanController = TextEditingController();
-  final _priorityController = TextEditingController();
 
+
+  String? _selectedPriority = 'Sedang';
+  final List<String> _priorities = ['Tinggi', 'Sedang', 'Rendah'];
 
   DateTimeRange? _selectedDateRange;
   Category? _selectedCategory;
@@ -113,7 +115,7 @@ class _AddAnggaranState extends State<AddAnggaran> {
           token: token,
           categoryId: _selectedCategory!.id,
           amount: int.parse(_totalController.text.replaceAll('.', '')),
-          priority: _priorityController.text,
+          priority: _selectedPriority,
           assetId: _selectedAsset?.id,
           note: _catatanController.text,
           startDate: _selectedDateRange!.start,
@@ -171,15 +173,23 @@ class _AddAnggaranState extends State<AddAnggaran> {
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 20),
-          TextFormField(
-            controller: _priorityController,
-            decoration: const InputDecoration(
-              labelText: 'Prioritas',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.flag_sharp),
-            ),
-            textCapitalization: TextCapitalization.sentences,
+          const Text('Prioritas', style: TextStyle(fontSize: 16, color: Colors.black54)),
+          Column(
+            children: _priorities.map((priority) {
+              return RadioListTile<String>(
+                title: Text(priority),
+                value: priority,
+                groupValue: _selectedPriority,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPriority = value;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              );
+            }).toList(),
           ),
+
           const SizedBox(height: 20),
           TextFormField(
             controller: _totalController,
@@ -238,7 +248,6 @@ class _AddAnggaranState extends State<AddAnggaran> {
         hintText: 'Pilih rentang tanggal',
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.calendar_today),
-        suffixText: dateText.isEmpty ? null : null,
       ),
       controller: TextEditingController(text: dateText),
     );

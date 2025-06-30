@@ -109,7 +109,7 @@ class ApiService {
     required int amount,
     int? assetId,
     String? note,
-    String? priority,
+    required String? priority,
     required DateTime startDate,
     required DateTime endDate,
   }) async {

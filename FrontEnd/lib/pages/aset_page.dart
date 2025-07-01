@@ -1,8 +1,7 @@
-// daily_cashapp-Yunan-Backend/FrontEnd/lib/pages/aset_page.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/asset_model.dart'; // Pastikan path ini benar
+import '../models/asset_model.dart';
 import '../service/api.service.dart';
 import 'halaman_crud/tambah_aset.dart';
 
@@ -32,7 +31,6 @@ class _HalamanAsetState extends State<HalamanAset> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     if (token == null) {
-      // Handle not logged in
       return;
     }
     setState(() {
@@ -56,7 +54,6 @@ class _HalamanAsetState extends State<HalamanAset> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header Aset
             Container(
               color: Colors.amber,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -69,7 +66,6 @@ class _HalamanAsetState extends State<HalamanAset> {
                   ),
                   Row(
                     children: [
-                      // Ganti dengan ikon yang sesuai jika perlu
                       const Icon(Icons.bar_chart),
                       const SizedBox(width: 12),
                       GestureDetector(
@@ -81,8 +77,6 @@ class _HalamanAsetState extends State<HalamanAset> {
                 ],
               ),
             ),
-
-            // Konten dinamis
             Expanded(
               child: FutureBuilder<List<AssetModel>>(
                 future: _assetsFuture,
@@ -100,8 +94,6 @@ class _HalamanAsetState extends State<HalamanAset> {
                   }
 
                   final assets = snapshot.data!;
-                  // TODO: Anda perlu memodifikasi model Aset dan service untuk menyertakan saldo
-                  // Untuk saat ini, kita hanya akan menampilkan nama dan jenisnya.
 
                   return RefreshIndicator(
                     onRefresh: _fetchAssets,
@@ -132,7 +124,6 @@ class _HalamanAsetState extends State<HalamanAset> {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       trailing: Text(amount, style: TextStyle(color: color)),
       onTap: () {
-        // TODO: Tambahkan navigasi ke detail aset atau halaman edit/hapus
       },
     );
   }

@@ -3,6 +3,7 @@ import assetService from "../services/asset.service.js";
 const getAll = async (req, res, next) => {
     try {
         const result = await assetService.getAll(req.user);
+<<<<<<< HEAD
         res.status(200).json({
             data: result
         });
@@ -19,8 +20,14 @@ const create = async (req, res, next) => {
     next(e);
   }
 };
+=======
+        res.status(200).json({ data: result });
+    } catch (e) {
+        next(e);
+    }
+}
+>>>>>>> parent of cdfc6d6 (membuat crud tambah aset)
 
 export default {
-  getAll,
-  create,
-};
+    getAll
+}

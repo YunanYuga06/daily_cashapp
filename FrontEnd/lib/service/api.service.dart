@@ -15,10 +15,8 @@ class ApiService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode(user.toJson()),
     );
 
@@ -30,15 +28,14 @@ class ApiService {
     }
   }
 
+
   static Future<String?> loginUser(String email, String password) async {
     final url = Uri.parse('${Env.baseUrl}/users/login');
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode({'email': email, 'password': password}),
     );
 
@@ -53,39 +50,8 @@ class ApiService {
     }
   }
 
-  static Future<void> createAsset({
-    required String token,
-    required String assetName,
-    required String assetType,
-    required int initialAmount,
-  }) async {
-    final url = Uri.parse('${Env.baseUrl}/assets');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: jsonEncode({
-        'asset_name': assetName,
-        'asset_type': assetType,
-        'first_amount': initialAmount,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Gagal membuat aset: ${response.body}');
-    }
-  }
-
-  static Future<List<BudgetModel>> getBudgets(
-    String token,
-    DateTime date,
-  ) async {
-    final url = Uri.parse(
-      '${Env.baseUrl}/budgets?year=${date.year}&month=${date.month}',
-    );
+  static Future<List<BudgetModel>> getBudgets(String token, DateTime date) async {
+    final url = Uri.parse('${Env.baseUrl}/budgets?year=${date.year}&month=${date.month}');
 
     final response = await http.get(
       url,
@@ -102,7 +68,6 @@ class ApiService {
       throw Exception('Gagal memuat budgets: ${response.body}');
     }
   }
-
   static Future<void> createBudget({
     required String token,
     required int categoryId,
@@ -147,10 +112,8 @@ class ApiService {
     final url = Uri.parse('${Env.baseUrl}/categories');
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
     );
 
     if (response.statusCode == 200) {
@@ -165,10 +128,9 @@ class ApiService {
     final url = Uri.parse('${Env.baseUrl}/assets');
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
+      
     );
 
     if (response.statusCode == 200) {
@@ -180,9 +142,7 @@ class ApiService {
   }
 
   static Future<SummaryModel> getSummary(String token, DateTime date) async {
-    final url = Uri.parse(
-      '${Env.baseUrl}/transactions/summary?year=${date.year}&month=${date.month}',
-    );
+    final url = Uri.parse('${Env.baseUrl}/transactions/summary?year=${date.year}&month=${date.month}');
     final response = await http.get(
       url,
       headers: {
@@ -197,7 +157,6 @@ class ApiService {
       throw Exception('Gagal memuat ringkasan: ${response.body}');
     }
   }
-
   static Future<ProfileModel> getCurrentUser(String token) async {
     final url = Uri.parse('${Env.baseUrl}/users/current');
     final response = await http.get(
@@ -250,8 +209,7 @@ class ApiService {
       return false;
     }
   }
-
-  static Future<void> updateBudget({
+    static Future<void> updateBudget({
     required String token,
     required int budgetId,
     required int categoryId,
@@ -300,5 +258,5 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Gagal menghapus anggaran: ${response.body}');
     }
-  }
+  }  
 }

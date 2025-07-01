@@ -1,8 +1,7 @@
 import { prismaClient } from "../application/database.js";
-import { validate } from "../validations/validation.js";
-import { createAssetValidation } from "../validations/asset.validation.js";
 
 const getAll = async (user) => {
+<<<<<<< HEAD
   return prismaClient.asset.findMany({
     where: {
       email_user: user.username
@@ -38,3 +37,20 @@ export default {
   getAll,
   create,
 };
+=======
+    return prismaClient.asset.findMany({
+        where: {
+            email_user: user.username
+        },
+        select: {
+            id: true,
+            asset_name: true,
+            asset_type: true
+        }
+    });
+}
+
+export default {
+    getAll
+}
+>>>>>>> parent of cdfc6d6 (membuat crud tambah aset)

@@ -6,5 +6,8 @@ const createAssetValidation = Joi.object({
   asset_type: Joi.string().max(255).required(),
   first_amount: Joi.number().min(0).required(),
 });
+const getAssetValidation = Joi.object({
+  id: Joi.number().required(),
+});
 
-export { createAssetValidation };
+export { createAssetValidation, getAssetValidation };

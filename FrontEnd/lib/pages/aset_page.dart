@@ -1,8 +1,7 @@
-// daily_cashapp-Yunan-Backend/FrontEnd/lib/pages/aset_page.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/asset_model.dart'; // Pastikan path ini benar
+import '../models/asset_model.dart';
 import '../service/api.service.dart';
 import 'halaman_crud/tambah_aset.dart';
 
@@ -14,7 +13,9 @@ class HalamanAset extends StatefulWidget {
 }
 
 class _HalamanAsetState extends State<HalamanAset> {
-  Future<List<AssetModel>>? _assetsFuture;
+  List<AssetModel> _assets = [];
+  bool _isLoading = true;
+  String? _error;
 
   final NumberFormat currencyFormatter = NumberFormat.currency(
     locale: 'id',
@@ -29,15 +30,25 @@ class _HalamanAsetState extends State<HalamanAset> {
   }
 
   Future<void> _fetchAssets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    if (token == null) {
-      // Handle not logged in
-      return;
+    if (mounted) setState(() => _isLoading = true);
+    _error = null;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null) throw Exception("Sesi tidak valid.");
+
+      final fetchedAssets = await ApiService.getAssets(token);
+      if (mounted) {
+        setState(() {
+          _assets = fetchedAssets;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() {
-      _assetsFuture = ApiService.getAssets(token);
-    });
   }
 
   Future<void> _navigateAndRefresh() async {
@@ -56,7 +67,6 @@ class _HalamanAsetState extends State<HalamanAset> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header Aset
             Container(
               color: Colors.amber,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -69,7 +79,6 @@ class _HalamanAsetState extends State<HalamanAset> {
                   ),
                   Row(
                     children: [
-                      // Ganti dengan ikon yang sesuai jika perlu
                       const Icon(Icons.bar_chart),
                       const SizedBox(width: 12),
                       GestureDetector(
@@ -81,43 +90,10 @@ class _HalamanAsetState extends State<HalamanAset> {
                 ],
               ),
             ),
-
-            // Konten dinamis
             Expanded(
-              child: FutureBuilder<List<AssetModel>>(
-                future: _assetsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Gagal memuat aset: ${snapshot.error}'),
-                    );
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('Belum ada aset.'));
-                  }
-
-                  final assets = snapshot.data!;
-                  // TODO: Anda perlu memodifikasi model Aset dan service untuk menyertakan saldo
-                  // Untuk saat ini, kita hanya akan menampilkan nama dan jenisnya.
-
-                  return RefreshIndicator(
-                    onRefresh: _fetchAssets,
-                    child: ListView.builder(
-                      itemCount: assets.length,
-                      itemBuilder: (context, index) {
-                        final asset = assets[index];
-                        return _buildAsetItem(
-                          asset.assetName,
-                          'Rp 123.456', // Ganti dengan saldo dinamis nanti
-                          Colors.blue,
-                        );
-                      },
-                    ),
-                  );
-                },
+              child: RefreshIndicator(
+                onRefresh: _fetchAssets,
+                child: _buildContent(),
               ),
             ),
           ],
@@ -126,14 +102,76 @@ class _HalamanAsetState extends State<HalamanAset> {
     );
   }
 
-  Widget _buildAsetItem(String title, String amount, Color color) {
-    return ListTile(
-      tileColor: Colors.grey[200],
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      trailing: Text(amount, style: TextStyle(color: color)),
-      onTap: () {
-        // TODO: Tambahkan navigasi ke detail aset atau halaman edit/hapus
-      },
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Terjadi kesalahan:\n$_error',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    if (_assets.isEmpty) {
+      return const Center(
+        child: Text('Belum ada aset. Tekan tombol (+) untuk menambah.'),
+      );
+    }
+
+    final Map<String, List<AssetModel>> groupedAssets = {};
+    for (var asset in _assets) {
+      (groupedAssets[asset.assetType] ??= []).add(asset);
+    }
+
+    return ListView(
+      children:
+          groupedAssets.entries.map((entry) {
+            final String type = entry.key;
+            final List<AssetModel> assetsInGroup = entry.value;
+            final int totalForType = assetsInGroup.fold(
+              0,
+              (sum, item) => sum + item.first_amount,
+            );
+
+            return _buildAssetGroup(type, totalForType, assetsInGroup);
+          }).toList(),
+    );
+  }
+
+  Widget _buildAssetGroup(String type, int total, List<AssetModel> assets) {
+    return Column(
+      children: [
+        ListTile(
+          tileColor: Colors.grey[300],
+          title: Text(
+            type,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          trailing: Text(
+            currencyFormatter.format(total),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ),
+        ...assets.map(
+          (asset) => ListTile(
+            tileColor: Colors.grey[100],
+            title: Text(asset.assetName),
+            trailing: Text(
+              currencyFormatter.format(asset.first_amount),
+              style: const TextStyle(color: Colors.black54),
+            ),
+            onTap: () {},
+          ),
+        ),
+      ],
     );
   }
 }

@@ -4,7 +4,19 @@ import { validate } from "../validations/validation.js";
 import { createAssetValidation } from "../validations/asset.validation.js";
 
 const getAll = async (user) => {
-  // ... (fungsi getAll yang sudah ada)
+  console.log("User object in getAll:", user);
+  return prismaClient.asset.findMany({
+    where: {
+      email_user: user.username,
+    },
+    select: {
+      id: true,
+      asset_name: true,
+      asset_type: true,
+      current_amount: true,
+      first_amount: true,
+    },
+  });
 };
 
 const create = async (user, request) => {

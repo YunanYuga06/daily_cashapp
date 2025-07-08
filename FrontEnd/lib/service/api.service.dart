@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:daily_cashapp/config/env.dart';
 import 'package:http/http.dart' as http;
+import '../models/reminder_model.dart';
 import '../models/user.model.dart';
 import '../models/asset_model.dart';
 import '../models/budget.dart';
@@ -299,4 +300,59 @@ class ApiService {
       throw Exception('Gagal menghapus anggaran: ${response.body}');
     }
   }
+  // ... (kode yang sudah ada)
+
+  static Future<void> createReminder({
+    required String token,
+    required String description,
+    required int amount,
+    required String period,
+    required DateTime date,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/reminders');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'description': description,
+        'amount': amount,
+        'period': period,
+        'date': date.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal membuat pengingat: ${response.body}');
+    }
+  }
+
+  static Future<List<ReminderModel>> getReminders(
+    String token,
+    DateTime date,
+  ) async {
+    final url = Uri.parse(
+      '${Env.baseUrl}/reminders?year=${date.year}&month=${date.month}',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return reminderModelFromJson(response.body);
+    } else {
+      throw Exception('Gagal memuat pengingat: ${response.body}');
+    }
+  }
+
+// ... (kode yang sudah ada)
 }

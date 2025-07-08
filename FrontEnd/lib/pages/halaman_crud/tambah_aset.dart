@@ -44,13 +44,7 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
       final token = prefs.getString('auth_token');
       if (token == null) throw Exception("Sesi tidak valid");
 
-      await ApiService.createAsset(
-        token: token,
-        assetName: _namaController.text,
-        assetType: _selectedJenis!,
-        initialAmount:
-            int.tryParse(_totalController.text.replaceAll('.', '')) ?? 0,
-      );
+      
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

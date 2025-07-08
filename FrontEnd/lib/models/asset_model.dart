@@ -11,7 +11,7 @@ class AssetModel {
   final int id;
   final String assetName;
   final String assetType;
-  final int first_amount; // Saldo saat ini
+  final int first_amount;
 
   factory AssetModel.fromJson(Map<String, dynamic> json) => AssetModel(
     id: json["id"],

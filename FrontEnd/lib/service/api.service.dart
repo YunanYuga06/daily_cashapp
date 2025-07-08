@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:daily_cashapp/config/env.dart';
+import 'package:flutter/src/widgets/editable_text.dart';
 import 'package:http/http.dart' as http;
 import '../models/user.model.dart';
 import '../models/asset_model.dart';
@@ -58,6 +59,7 @@ class ApiService {
     required String assetName,
     required String assetType,
     required int initialAmount,
+    required TextEditingController taxNominal,
   }) async {
     final url = Uri.parse('${Env.baseUrl}/assets');
     final response = await http.post(

@@ -1,4 +1,3 @@
-// src/validations/asset.validation.js
 import Joi from "joi";
 
 const createAssetValidation = Joi.object({

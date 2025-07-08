@@ -14,12 +14,14 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _totalController = TextEditingController();
+  final _taxController = TextEditingController();
 
   final List<String> _jenisAset = [
     'Uang Tunai',
     'E-Wallet',
     'Bank',
     'Investasi',
+    'Crypto',
     'Lainnya',
   ];
   String? _selectedJenis;
@@ -29,6 +31,7 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
   void dispose() {
     _namaController.dispose();
     _totalController.dispose();
+    _taxController.dispose();
     super.dispose();
   }
 
@@ -46,6 +49,7 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
         token: token,
         assetName: _namaController.text,
         assetType: _selectedJenis!,
+        taxNominal: _taxController,
         initialAmount:
             int.tryParse(_totalController.text.replaceAll('.', '')) ?? 0,
       );

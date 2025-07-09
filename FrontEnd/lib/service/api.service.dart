@@ -1,3 +1,5 @@
+// daily_cashapp/FrontEnd/lib/service/api.service.dart
+
 import 'dart:convert';
 import 'package:daily_cashapp/config/env.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +10,41 @@ import '../models/transaksi_model.dart';
 import '../models/profile_model.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
+
+// Model Sederhana untuk Data Transaksi yang Akan Dikirim
+class TransactionData {
+  final int categoryId;
+  final int amount;
+  final String type;
+  final DateTime date;
+  final int? assetId;
+  final String? description;
+
+  TransactionData({
+    required this.categoryId,
+    required this.amount,
+    required this.type,
+    required this.date,
+    this.assetId,
+    this.description,
+  });
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {
+      'id_category': categoryId,
+      'amount': amount,
+      'type': type,
+      'date': date.toIso8601String().substring(0, 10), // Format YYYY-MM-DD
+    };
+    if (assetId != null) {
+      data['id_asset'] = assetId;
+    }
+    if (description != null && description!.isNotEmpty) {
+      data['description'] = description;
+    }
+    return data;
+  }
+}
 
 class ApiService {
   static Future<String?> registerUser(UserModel user) async {
@@ -50,8 +87,99 @@ class ApiService {
     }
   }
 
-  static Future<List<BudgetModel>> getBudgets(String token, DateTime date) async {
-    final url = Uri.parse('${Env.baseUrl}/budgets?year=${date.year}&month=${date.month}');
+  // --- FUNGSI BARU DITAMBAHKAN ---
+  static Future<void> createTransaction(String token, TransactionData transaction) async {
+    final url = Uri.parse('${Env.baseUrl}/transactions');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode(transaction.toJson()),
+    );
+
+    if (response.statusCode != 200) {
+      // Jika gagal, lempar error
+      throw Exception('Gagal menyimpan transaksi: ${response.body}');
+    }
+  }
+  // Fungsi BARU untuk mengambil daftar transaksi
+static Future<List<TransactionModel>> getTransactions(
+  String token, {
+  int? year,
+  int? month,
+}) async {
+  // Membuat URL dasar ke endpoint transaksi
+  var uri = Uri.parse('${Env.baseUrl}/transactions');
+
+  // Menambahkan filter tahun dan bulan ke URL jika ada
+  final Map<String, String> queryParams = {};
+  if (year != null) {
+    queryParams['year'] = year.toString();
+  }
+  if (month != null) {
+    queryParams['month'] = month.toString();
+  }
+
+  // Menggabungkan filter ke URL
+  if (queryParams.isNotEmpty) {
+    uri = uri.replace(queryParameters: queryParams);
+  }
+
+  // Melakukan panggilan API untuk mendapatkan data
+  final response = await http.get(
+    uri,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',
+    },
+  );
+
+  // Jika berhasil (kode 200), ubah JSON menjadi List<TransactionModel>
+  if (response.statusCode == 200) {
+    return transactionModelFromJson(response.body);
+  } else {
+    // Jika gagal, tampilkan error
+    throw Exception('Gagal memuat transaksi: ${response.body}');
+  }
+}
+
+  static Future<void> createAsset({
+    required String token,
+    required String assetName,
+    required String assetType,
+    required int initialAmount,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/assets');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'asset_name': assetName,
+        'asset_type': assetType,
+        'first_amount': initialAmount,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal membuat aset: ${response.body}');
+    }
+  }
+
+  static Future<List<BudgetModel>> getBudgets(
+    String token,
+    DateTime date,
+  ) async {
+    final url = Uri.parse(
+      '${Env.baseUrl}/budgets?year=${date.year}&month=${date.month}',
+    );
 
     final response = await http.get(
       url,

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/profile_model.dart';
 import '../../service/api.service.dart';
 
 class EditProfilePage extends StatefulWidget {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
 import '../../service/api.service.dart';
 
 class TambahAsetPage extends StatefulWidget {
@@ -124,10 +123,12 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
                 // Bisa ditambahkan formatter untuk ribuan jika perlu
               ],
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return 'Saldo awal wajib diisi';
-                if (int.tryParse(value.replaceAll('.', '')) == null)
+                }
+                if (int.tryParse(value.replaceAll('.', '')) == null) {
                   return 'Masukkan angka yang valid';
+                }
                 return null;
               },
             ),

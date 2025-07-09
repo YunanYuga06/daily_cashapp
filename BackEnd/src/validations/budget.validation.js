@@ -6,7 +6,7 @@ const createBudgetValidation = Joi.object({
     first_period: Joi.date().required(),
     last_period: Joi.date().required(),
     id_asset: Joi.number().optional().allow(null),
-    note: Joi.string().optional().allow('')
+    note: Joi.string().optional().allow(''),
 });
 
 const updateBudgetValidation = Joi.object({

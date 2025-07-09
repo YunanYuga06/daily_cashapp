@@ -219,6 +219,7 @@ class _BudgetTabState extends State<BudgetTab> {
                       Text(currencyFormatter.format(dailyLimit)),
                     ],
                   ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),

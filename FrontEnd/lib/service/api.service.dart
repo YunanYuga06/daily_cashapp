@@ -52,10 +52,8 @@ class ApiService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode(user.toJson()),
     );
 
@@ -67,15 +65,14 @@ class ApiService {
     }
   }
 
+
   static Future<String?> loginUser(String email, String password) async {
     final url = Uri.parse('${Env.baseUrl}/users/login');
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',},
       body: jsonEncode({'email': email, 'password': password}),
     );
 
@@ -199,7 +196,6 @@ static Future<List<TransactionModel>> getTransactions(
       throw Exception('Gagal memuat budgets: ${response.body}');
     }
   }
-
   static Future<void> createBudget({
     required String token,
     required int categoryId,
@@ -242,10 +238,8 @@ static Future<List<TransactionModel>> getTransactions(
     final url = Uri.parse('${Env.baseUrl}/categories');
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
     );
 
     if (response.statusCode == 200) {
@@ -260,10 +254,9 @@ static Future<List<TransactionModel>> getTransactions(
     final url = Uri.parse('${Env.baseUrl}/assets');
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'ngrok-skip-browser-warning': 'true',
-      },
+      headers: {'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning': 'true',},
+      
     );
 
     if (response.statusCode == 200) {
@@ -275,9 +268,7 @@ static Future<List<TransactionModel>> getTransactions(
   }
 
   static Future<SummaryModel> getSummary(String token, DateTime date) async {
-    final url = Uri.parse(
-      '${Env.baseUrl}/transactions/summary?year=${date.year}&month=${date.month}',
-    );
+    final url = Uri.parse('${Env.baseUrl}/transactions/summary?year=${date.year}&month=${date.month}');
     final response = await http.get(
       url,
       headers: {
@@ -292,7 +283,6 @@ static Future<List<TransactionModel>> getTransactions(
       throw Exception('Gagal memuat ringkasan: ${response.body}');
     }
   }
-
   static Future<ProfileModel> getCurrentUser(String token) async {
     final url = Uri.parse('${Env.baseUrl}/users/current');
     final response = await http.get(
@@ -345,8 +335,7 @@ static Future<List<TransactionModel>> getTransactions(
       return false;
     }
   }
-
-  static Future<void> updateBudget({
+    static Future<void> updateBudget({
     required String token,
     required int budgetId,
     required int categoryId,
@@ -395,5 +384,5 @@ static Future<List<TransactionModel>> getTransactions(
     if (response.statusCode != 200) {
       throw Exception('Gagal menghapus anggaran: ${response.body}');
     }
-  }
+  }  
 }

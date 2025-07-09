@@ -1,4 +1,3 @@
-// daily_cashapp-Yunan-Backend/FrontEnd/lib/pages/halaman_crud/tambah_aset.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../service/api.service.dart';
@@ -43,13 +42,7 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
       final token = prefs.getString('auth_token');
       if (token == null) throw Exception("Sesi tidak valid");
 
-      await ApiService.createAsset(
-        token: token,
-        assetName: _namaController.text,
-        assetType: _selectedJenis!,
-        initialAmount:
-            int.tryParse(_totalController.text.replaceAll('.', '')) ?? 0,
-      );
+      
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

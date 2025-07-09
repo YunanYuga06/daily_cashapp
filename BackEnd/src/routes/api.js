@@ -34,6 +34,11 @@ privateRouter.delete("/api/budgets/:id", budgetController.remove);
 // Transaction Routes (Rute Transaksi)
 privateRouter.get("/api/transactions/summary", transactionController.getSummary);
 privateRouter.post("/api/transactions", transactionController.create);
-privateRouter.get("/api/transactions", transactionController.getAll); // <-- Rute baru ditambahkan di sini
+privateRouter.get("/api/transactions", transactionController.getAll); 
+
+// <-- Rute baru ditambahkan di sini
+privateRouter.get("/api/reminders", reminderController.getAll);
+privateRouter.post("/api/reminders", reminderController.create);
+
 
 export { privateRouter };

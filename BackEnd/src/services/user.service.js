@@ -22,8 +22,15 @@ const register = async (request) => {
 
     user.password = await bcrypt.hash(user.password, 10);
 
+    // Ini adalah kode perbaikan dari error sebelumnya
+    const dataToCreate = {
+        name: user.name,
+        email: user.email,
+        password: user.password
+    };
+
     return prismaClient.user.create({
-        data: user,
+        data: dataToCreate,
         select: {
             email: true,
             name: true
@@ -100,6 +107,10 @@ const update = async (userEmail, request) => {
     });
 }
 
+// INI BAGIAN YANG PENTING DAN KEMUNGKINAN HILANG
 export default {
-    register, login, get, update
+    register,
+    login,
+    get,
+    update
 }

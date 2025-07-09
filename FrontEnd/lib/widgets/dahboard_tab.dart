@@ -14,7 +14,7 @@ class _SectionData {
 
 class DashboardTab extends StatefulWidget {
   final DateTime currentMonth;
-  const DashboardTab({Key? key, required this.currentMonth}) : super(key: key);
+  const DashboardTab({super.key, required this.currentMonth});
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();

@@ -10,8 +10,14 @@ import {
 
 
 const create = async (user, request) => {
+    const budget = validate(createBudgetValidation, request);
+    
+    const data ={
+        ...budget,
+        email_user: user.username
+    };
     return prismaClient.budget.create({
-        data: budget,
+        data: data,
         select: {
             id: true,
             amount: true,
@@ -157,3 +163,5 @@ export default {
     update,
     remove
 };
+
+

@@ -58,7 +58,7 @@ model Budget {
   first_period DateTime @db.Date
   last_period  DateTime @db.Date
   id_asset    Int?
-  note        String?  // <-- TAMBAHKAN BARIS INI
+  note        String? 
 
   user     User      @relation(fields: [email_user], references: [email])
   category Category  @relation(fields: [id_category], references: [id])

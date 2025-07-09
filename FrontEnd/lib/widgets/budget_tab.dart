@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class BudgetTab extends StatefulWidget {
   final DateTime currentMonth; // Menerima state bulan
-  const BudgetTab({Key? key, required this.currentMonth}) : super(key: key);
+  const BudgetTab({super.key, required this.currentMonth});
 
   @override
   State<BudgetTab> createState() => _BudgetTabState();
@@ -219,6 +219,7 @@ class _BudgetTabState extends State<BudgetTab> {
                       Text(currencyFormatter.format(dailyLimit)),
                     ],
                   ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),

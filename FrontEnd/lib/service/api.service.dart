@@ -139,14 +139,11 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      // Perhatikan di sini, mungkin Anda perlu membuat `transactionModelFromJson`
-      // Untuk saat ini, asumsikan model dan fungsinya sudah ada
-      // return transactionModelFromJson(response.body);
-      throw UnimplementedError(
-          "Fungsi transactionModelFromJson belum diimplementasikan.");
-    } else {
-      throw Exception('Gagal memuat transaksi: ${response.body}');
-    }
+  // PERBAIKAN: Baris di bawah ini sudah diaktifkan
+  return transactionModelFromJson(response.body);
+} else {
+  throw Exception('Gagal memuat transaksi: ${response.body}');
+}
   }
 
   // --- FUNGSI ASET ---

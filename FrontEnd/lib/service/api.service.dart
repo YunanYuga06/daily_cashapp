@@ -1,16 +1,18 @@
 import 'dart:convert';
 import 'package:daily_cashapp/config/env.dart';
 import 'package:http/http.dart' as http;
-import '../models/reminder_model.dart';
 import '../models/user.model.dart';
 import '../models/asset_model.dart';
 import '../models/budget.dart';
 import '../models/transaksi_model.dart';
 import '../models/profile_model.dart';
+import '../models/reminder_model.dart'; // <<<--- TAMBAHKAN BARIS INI
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
+  // ... (kode yang lain tetap sama, tidak perlu diubah) ...
+
   static Future<String?> registerUser(UserModel user) async {
     final url = Uri.parse('${Env.baseUrl}/users');
 
@@ -300,7 +302,6 @@ class ApiService {
       throw Exception('Gagal menghapus anggaran: ${response.body}');
     }
   }
-  // ... (kode yang sudah ada)
 
   static Future<void> createReminder({
     required String token,
@@ -353,6 +354,4 @@ class ApiService {
       throw Exception('Gagal memuat pengingat: ${response.body}');
     }
   }
-
-// ... (kode yang sudah ada)
 }

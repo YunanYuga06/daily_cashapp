@@ -67,11 +67,14 @@ model Budget {
 
 model Reminder {
   id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [email_user], references: [email])
   email_user  String   @db.VarChar(255)
   description String   @db.Text
-  period      String   // one_time, weekly, monthly, yearly
+  period      String
   date        DateTime @db.Date
+  amount      Int      // Tambahkan baris ini
+  user        User     @relation(fields: [email_user], references: [email])
+
+  @@map("Reminder")
 }
 
 model Transaction {

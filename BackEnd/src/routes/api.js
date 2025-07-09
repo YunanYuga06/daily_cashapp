@@ -7,6 +7,7 @@ import budgetController from "../controllers/budget.controller.js";
 import categoryController from "../controllers/category.controller.js";
 import assetController from "../controllers/asset.controller.js";
 import transactionController from "../controllers/transaksi.controller.js";
+import reminderController from "../controllers/reminder.controller.js";
 import upload from "../middlewares/upload.middleware.js";
 
 const privateRouter = new express.Router();
@@ -33,6 +34,11 @@ privateRouter.delete("/api/budgets/:id", budgetController.remove);
 // Transaction Routes (Rute Transaksi)
 privateRouter.get("/api/transactions/summary", transactionController.getSummary);
 privateRouter.post("/api/transactions", transactionController.create);
-privateRouter.get("/api/transactions", transactionController.getAll); // <-- Rute baru ditambahkan di sini
+privateRouter.get("/api/transactions", transactionController.getAll); 
+
+// <-- Rute baru ditambahkan di sini
+privateRouter.get("/api/reminders", reminderController.getAll);
+privateRouter.post("/api/reminders", reminderController.create);
+
 
 export { privateRouter };

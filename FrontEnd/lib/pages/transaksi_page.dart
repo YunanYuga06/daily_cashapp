@@ -1,5 +1,3 @@
-// lib/pages/transaksi_page.dart
-
 import 'package:daily_cashapp/pages/halaman_crud/tambah_anggaran.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:daily_cashapp/widgets/dahboard_tab.dart';

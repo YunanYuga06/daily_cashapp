@@ -68,7 +68,7 @@ class _HalamanAsetState extends State<HalamanAset> {
         child: Column(
           children: [
             Container(
-              color: Colors.amber,
+              color: Colors.orange,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

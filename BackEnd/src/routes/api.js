@@ -1,5 +1,3 @@
-// daily_cashapp/BackEnd/src/routes/api.js
-
 import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import * as userController from "../controllers/user.controller.js";
@@ -11,11 +9,17 @@ import reminderController from "../controllers/reminder.controller.js";
 import upload from "../middlewares/upload.middleware.js";
 
 const privateRouter = new express.Router();
+
+// Semua route di bawah ini butuh token
 privateRouter.use(authMiddleware);
 
 // User Routes
 privateRouter.get("/api/users/current", userController.getCurrentUser);
-privateRouter.put("/api/users/current", upload.single("profile_picture"), userController.updateUser);
+privateRouter.put(
+  "/api/users/current",
+  upload.single("profile_picture"),
+  userController.updateUser
+);
 
 // Category Routes
 privateRouter.get("/api/categories", categoryController.getAll);
@@ -31,14 +35,13 @@ privateRouter.get("/api/budgets/:id", budgetController.get);
 privateRouter.put("/api/budgets/:id", budgetController.update);
 privateRouter.delete("/api/budgets/:id", budgetController.remove);
 
-// Transaction Routes (Rute Transaksi)
+// Transaction Routes
 privateRouter.get("/api/transactions/summary", transactionController.getSummary);
 privateRouter.post("/api/transactions", transactionController.create);
-privateRouter.get("/api/transactions", transactionController.getAll); 
+privateRouter.get("/api/transactions", transactionController.getAll);
 
-// <-- Rute baru ditambahkan di sini
+// Reminder Routes
 privateRouter.get("/api/reminders", reminderController.getAll);
 privateRouter.post("/api/reminders", reminderController.create);
-
 
 export { privateRouter };

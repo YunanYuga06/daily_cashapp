@@ -1,19 +1,25 @@
 import jwt from "jsonwebtoken";
 
-const SECRET_KEY = process.env.SECRET_KEY
-
 export const authMiddleware = async (req, res, next) => {
-    const token = req.get('Authorization')?.split(' ')[1];
+  const authHeader = req.get("Authorization");
+  const token = authHeader?.split(" ")[1];
 
-    if (!token) {
-        return res.status(401).json({ errors: "Unauthorized" }).end();
+  if (!token) {
+    return res.status(401).json({ errors: "Unauthorized" }).end();
+  }
+
+  try {
+    const SECRET_KEY = process.env.SECRET_KEY;
+    if (!SECRET_KEY) {
+      return res
+        .status(500)
+        .json({ errors: "Server misconfigured (SECRET_KEY missing)" })
+        .end();
     }
 
-    try {
-        req.user = jwt.verify(token, SECRET_KEY);
-
-        next();
-    } catch (error) {
-        return res.status(401).json({ errors: "Unauthorized" }).end();
-    }
+    req.user = jwt.verify(token, SECRET_KEY);
+    next();
+  } catch (error) {
+    return res.status(401).json({ errors: "Unauthorized" }).end();
+  }
 };

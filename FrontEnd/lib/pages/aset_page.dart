@@ -1,10 +1,10 @@
-// daily_cashapp-Yunan-Backend/FrontEnd/lib/pages/aset_page.dart
+import 'package:daily_cashapp/models/asset_model.dart';
+import 'package:daily_cashapp/pages/halaman_crud/tambah_aset.dart';
+import 'package:daily_cashapp/service/api.service.dart';
+import 'package:daily_cashapp/view/login.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/asset_model.dart'; // Pastikan path ini benar
-import '../service/api.service.dart';
-import 'halaman_crud/tambah_aset.dart';
 
 class HalamanAset extends StatefulWidget {
   const HalamanAset({super.key});
@@ -17,7 +17,7 @@ class _HalamanAsetState extends State<HalamanAset> {
   Future<List<AssetModel>>? _assetsFuture;
 
   final NumberFormat currencyFormatter = NumberFormat.currency(
-    locale: 'id',
+    locale: 'id_ID',
     symbol: 'Rp ',
     decimalDigits: 0,
   );
@@ -29,22 +29,33 @@ class _HalamanAsetState extends State<HalamanAset> {
   }
 
   Future<void> _fetchAssets() async {
+    if (!mounted) return;
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+
     if (token == null) {
-      // Handle not logged in
+      if (mounted) {
+        setState(() {
+          _assetsFuture = null;
+        });
+      }
       return;
     }
-    setState(() {
-      _assetsFuture = ApiService.getAssets(token);
-    });
+
+    if (mounted) {
+      setState(() {
+        _assetsFuture = ApiService.getAssets(token);
+      });
+    }
   }
 
-  Future<void> _navigateAndRefresh() async {
+  void _navigateAndRefresh() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const TambahAsetPage()),
+      MaterialPageRoute(builder: (context) => const TambahAsetPage()),
     );
+
     if (result == true && mounted) {
       _fetchAssets();
     }
@@ -53,87 +64,109 @@ class _HalamanAsetState extends State<HalamanAset> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Aset
-            Container(
-              color: Colors.amber,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Aset',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
-                    children: [
-                      // Ganti dengan ikon yang sesuai jika perlu
-                      const Icon(Icons.bar_chart),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _navigateAndRefresh,
-                        child: const Icon(Icons.add_circle),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Konten dinamis
-            Expanded(
-              child: FutureBuilder<List<AssetModel>>(
-                future: _assetsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Gagal memuat aset: ${snapshot.error}'),
-                    );
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('Belum ada aset.'));
-                  }
-
-                  final assets = snapshot.data!;
-                  // TODO: Anda perlu memodifikasi model Aset dan service untuk menyertakan saldo
-                  // Untuk saat ini, kita hanya akan menampilkan nama dan jenisnya.
-
-                  return RefreshIndicator(
-                    onRefresh: _fetchAssets,
-                    child: ListView.builder(
-                      itemCount: assets.length,
-                      itemBuilder: (context, index) {
-                        final asset = assets[index];
-                        return _buildAsetItem(
-                          asset.assetName,
-                          'Rp 123.456', // Ganti dengan saldo dinamis nanti
-                          Colors.blue,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Aset'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle),
+            onPressed: _navigateAndRefresh,
+          ),
+        ],
       ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildAsetItem(String title, String amount, Color color) {
-    return ListTile(
-      tileColor: Colors.grey[200],
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      trailing: Text(amount, style: TextStyle(color: color)),
-      onTap: () {
-        // TODO: Tambahkan navigasi ke detail aset atau halaman edit/hapus
+  Widget _buildBody() {
+    // Kalau belum login / token tidak ada
+    if (_assetsFuture == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("Silakan login untuk melihat aset."),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+              child: const Text("Login"),
+            )
+          ],
+        ),
+      );
+    }
+
+    return FutureBuilder<List<AssetModel>>(
+      future: _assetsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Gagal memuat aset. Error: ${snapshot.error}'),
+          );
+        }
+
+        final assets = snapshot.data ?? [];
+        if (assets.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _fetchAssets,
+            child: ListView(
+              children: const [
+                SizedBox(height: 200),
+                Center(
+                  child: Text(
+                    'Belum ada aset.\nTekan tombol (+) untuk menambahkan.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: _fetchAssets,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: assets.length,
+            itemBuilder: (context, index) {
+              final asset = assets[index];
+              return _buildAsetItem(asset);
+            },
+          ),
+        );
       },
+    );
+  }
+
+  Widget _buildAsetItem(AssetModel asset) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: ListTile(
+        tileColor: Colors.grey[200],
+        title: Text(
+          asset.assetName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: asset.assetType.isNotEmpty ? Text(asset.assetType) : null,
+        trailing: Text(
+          currencyFormatter.format(asset.currentAmount),
+          style: const TextStyle(color: Colors.blue),
+        ),
+        onTap: () {
+          // TODO: navigasi ke detail/edit aset kalau kamu mau tambah fitur berikutnya
+        },
+      ),
     );
   }
 }

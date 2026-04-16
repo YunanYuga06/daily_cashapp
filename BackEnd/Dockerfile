@@ -7,6 +7,9 @@ RUN npm install
 
 COPY . .
 
+# 🔥 ini yang penting
+RUN npx prisma generate
+
 EXPOSE 8080
 
-CMD ["npm", "start"]
+CMD ["nodemon ."]

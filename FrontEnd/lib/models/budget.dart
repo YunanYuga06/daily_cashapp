@@ -12,8 +12,14 @@ class Category {
   final String name;
   final String type;
 
-  factory Category.fromJson(Map<String, dynamic> json) =>
-      Category(id: json["id"], name: json["name"], type: json["type"]);
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      // Gunakan .toString() dan tryParse pada ID
+      id: json["id"] != null ? int.tryParse(json["id"].toString()) ?? 0 : 0,
+      name: json["name"]?.toString() ?? '',
+      type: json["type"]?.toString() ?? '',
+    );
+  }
 }
 
 class BudgetModel {

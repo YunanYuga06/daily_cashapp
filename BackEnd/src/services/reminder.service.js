@@ -1,6 +1,7 @@
 import { prismaClient } from "../application/database.js";
 import { validate } from "../validations/validation.js";
 import { createReminderValidation } from "../validations/reminder.validation.js";
+import { ResponseError } from "../error/response.error.js";
 
 const create = async (user, request) => {
     const reminder = validate(createReminderValidation, request);
@@ -43,7 +44,7 @@ const getAll = async (user, year, month) => {
 const update = async (id, user, request) => {
     const reminderId = parseInt(id);
 
-    // Pastikan data ada dan milik user tersebut
+    // Gunakan prismaClient yang sudah di-import di atas
     const existing = await prismaClient.reminder.findFirst({
         where: { id: reminderId, email_user: user.username }
     });
@@ -66,7 +67,6 @@ const update = async (id, user, request) => {
 
 const remove = async (id, user) => {
     const reminderId = parseInt(id);
-
     const existing = await prismaClient.reminder.findFirst({
         where: { id: reminderId, email_user: user.username }
     });

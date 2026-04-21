@@ -205,9 +205,10 @@ class _HalamanAsetState extends State<HalamanAset> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
+        
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
+          color: Colors.red,
         ),
         child: const Icon(Icons.delete, color: Colors.white),
       ),

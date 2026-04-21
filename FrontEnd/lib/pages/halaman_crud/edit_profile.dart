@@ -16,6 +16,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  // Di dalam fungsi saat user memilih gambar profil:
+  
   File? _imageFile;
   String? _networkImageUrl;
   bool _isLoading = true;
@@ -61,7 +63,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery, 
+      imageQuality: 50,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
+    
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);

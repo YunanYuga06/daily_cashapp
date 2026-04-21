@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_cashapp/config/app_theme.dart';
 import 'package:daily_cashapp/service/api.service.dart';
-import 'package:daily_cashapp/models/budget.dart'; 
+import 'package:daily_cashapp/models/budget.dart';
 import 'package:daily_cashapp/models/asset_model.dart';
 import 'package:daily_cashapp/models/transaksi_model.dart'; // <-- Wajib import ini
 import 'pilih_item_page.dart';
@@ -67,7 +67,7 @@ class _AddTransaksiState extends State<AddTransaksi> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
       if (token == null) throw Exception("Token tidak ditemukan");
-      
+
       final results = await Future.wait([
         ApiService.getCategories(token),
         ApiService.getAssets(token),
@@ -77,43 +77,49 @@ class _AddTransaksiState extends State<AddTransaksi> {
         setState(() {
           _daftarKategori = results[0] as List<Category>;
           _daftarAset = results[1] as List<AssetModel>;
-          
+
           if (_isEditMode) {
             // Cocokkan ID Kategori lama dengan daftar yang baru ditarik
             try {
               _selectedCategory = _daftarKategori.firstWhere(
-                (c) => c.id == widget.existingTransaction!.category.id
+                (c) => c.id == widget.existingTransaction!.category.id,
               );
             } catch (e) {}
           } else {
             // Jika mode tambah, pilih yang pertama (default)
-            if (_daftarKategori.isNotEmpty) _selectedCategory = _daftarKategori.first;
+            if (_daftarKategori.isNotEmpty)
+              _selectedCategory = _daftarKategori.first;
             if (_daftarAset.isNotEmpty) _selectedAsset = _daftarAset.first;
           }
-          
+
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat data awal: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memuat data awal: $e')));
       }
     }
   }
 
   Future<void> _simpanTransaksi() async {
-    if (_totalController.text.isEmpty || int.tryParse(_totalController.text) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Total tidak boleh kosong!')));
+    if (_totalController.text.isEmpty ||
+        int.tryParse(_totalController.text) == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Total tidak boleh kosong!')),
+      );
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kategori wajib dipilih!')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Kategori wajib dipilih!')));
       return;
     }
-    
+
     setState(() => _isSaving = true);
 
     try {
@@ -132,24 +138,37 @@ class _AddTransaksiState extends State<AddTransaksi> {
 
       if (_isEditMode) {
         // Panggil fungsi Update API
-        await ApiService.updateTransaction(token, widget.existingTransaction!.id, transactionData);
+        await ApiService.updateTransaction(
+          token,
+          widget.existingTransaction!.id,
+          transactionData,
+        );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi berhasil diperbarui!')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaksi berhasil diperbarui!')),
+          );
         }
       } else {
         // Panggil fungsi Create API
         await ApiService.createTransaction(token, transactionData);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi berhasil disimpan!')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaksi berhasil disimpan!')),
+          );
         }
       }
 
       if (mounted) {
-        Navigator.pop(context, true); // Kembali ke halaman sebelumnya dan kirim sinyal 'true' untuk refresh data
+        Navigator.pop(
+          context,
+          true,
+        ); // Kembali ke halaman sebelumnya dan kirim sinyal 'true' untuk refresh data
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -160,7 +179,10 @@ class _AddTransaksiState extends State<AddTransaksi> {
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
-      context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime(2030),
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() => _selectedDate = picked);
@@ -168,15 +190,36 @@ class _AddTransaksiState extends State<AddTransaksi> {
   }
 
   Future<void> _pilihKategori() async {
+    final targetType = _isExpense ? 'expense' : 'income';
+    final fallbackType = _isExpense ? 'OUT' : 'IN';
+    final filteredCategories =
+        _daftarKategori
+            .where((c) => c.type == targetType || c.type == fallbackType)
+            .toList();
+
+    if (filteredCategories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Belum ada kategori untuk tipe ini.')),
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PilihItemPage(title: 'Kategori', items: _daftarKategori.map((c) => c.name).toList()),
+        builder:
+            (context) => PilihItemPage(
+              title: 'Kategori',
+              items: filteredCategories.map((c) => c.name).toList(),
+            ),
       ),
     );
+
     if (result != null) {
       setState(() {
-        _selectedCategory = _daftarKategori.firstWhere((c) => c.name == result);
+        _selectedCategory = filteredCategories.firstWhere(
+          (c) => c.name == result,
+        );
       });
     }
   }
@@ -185,7 +228,11 @@ class _AddTransaksiState extends State<AddTransaksi> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PilihItemPage(title: 'Aset', items: _daftarAset.map((a) => a.assetName).toList()),
+        builder:
+            (context) => PilihItemPage(
+              title: 'Aset',
+              items: _daftarAset.map((a) => a.assetName).toList(),
+            ),
       ),
     );
     if (result != null) {
@@ -199,18 +246,28 @@ class _AddTransaksiState extends State<AddTransaksi> {
     _catatanController.text = _catatan;
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tambah Catatan'),
-        content: TextField(
-          controller: _catatanController, 
-          autofocus: true, 
-          decoration: const InputDecoration(hintText: 'Masukkan catatan...'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-          TextButton(onPressed: () => Navigator.pop(context, _catatanController.text), child: const Text('Simpan')),
-        ],
-      ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Tambah Catatan'),
+            content: TextField(
+              controller: _catatanController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan...',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed:
+                    () => Navigator.pop(context, _catatanController.text),
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
     );
     if (result != null) {
       setState(() => _catatan = result);
@@ -226,38 +283,61 @@ class _AddTransaksiState extends State<AddTransaksi> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         // Judul AppBar berubah secara dinamis
-        title: Text(_isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi', style: AppTheme.heading2),
+        title: Text(
+          _isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi',
+          style: AppTheme.heading2,
+        ),
         backgroundColor: AppTheme.surface,
         elevation: 1,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.spacingLarge),
-              child: Column(
-                children: [
-                  _buildTypeSelector(),
-                  const SizedBox(height: AppTheme.spacingLarge),
-                  _buildFormFields(),
-                ],
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppTheme.spacingLarge),
+                child: Column(
+                  children: [
+                    _buildTypeSelector(),
+                    const SizedBox(height: AppTheme.spacingLarge),
+                    _buildFormFields(),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
   Widget _buildTypeSelector() {
     return Container(
-      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: AppTheme.borderRadius),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: AppTheme.borderRadius,
+      ),
       child: ToggleButtons(
         isSelected: [_isExpense, !_isExpense],
-        onPressed: (index) => setState(() => _isExpense = index == 0),
+        onPressed:
+            (index) => setState(() {
+              _isExpense = index == 0;
+              _selectedCategory = null;
+            }),
         borderRadius: AppTheme.borderRadius,
         selectedColor: Colors.white,
         fillColor: _isExpense ? AppTheme.expense : AppTheme.income,
         renderBorder: false,
         children: const [
-          Padding(padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12), child: Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold))),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12), child: Text('Pemasukan', style: TextStyle(fontWeight: FontWeight.bold))),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+            child: Text(
+              'Pengeluaran',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+            child: Text(
+              'Pemasukan',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
       ),
     );
@@ -269,33 +349,50 @@ class _AddTransaksiState extends State<AddTransaksi> {
         // Total menggunakan TextField Native
         TextField(
           controller: _totalController,
-          keyboardType: TextInputType.number, // Memanggil numpad native Android/iOS
+          keyboardType:
+              TextInputType.number, // Memanggil numpad native Android/iOS
           style: TextStyle(
-            fontSize: 28, 
-            fontWeight: FontWeight.bold, 
-            color: _isExpense ? AppTheme.expense : AppTheme.income
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: _isExpense ? AppTheme.expense : AppTheme.income,
           ),
           decoration: InputDecoration(
             labelText: 'Total Transaksi',
             prefixText: 'Rp ',
             prefixStyle: TextStyle(
-              fontSize: 28, 
-              fontWeight: FontWeight.bold, 
-              color: _isExpense ? AppTheme.expense : AppTheme.income
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: _isExpense ? AppTheme.expense : AppTheme.income,
             ),
             border: const UnderlineInputBorder(),
           ),
         ),
         const SizedBox(height: 24),
-        
-        _buildInputRow('Tanggal', DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate), () => _selectDate(context)),
+
+        _buildInputRow(
+          'Tanggal',
+          DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate),
+          () => _selectDate(context),
+        ),
         const Divider(),
-        _buildInputRow('Kategori', _selectedCategory?.name ?? 'Pilih Kategori', _pilihKategori),
+        _buildInputRow(
+          'Kategori',
+          _selectedCategory?.name ?? 'Pilih Kategori',
+          _pilihKategori,
+        ),
         const Divider(),
-        _buildInputRow('Catatan', _catatan.isEmpty ? 'Ketuk untuk menambah' : _catatan, _tambahCatatan),
+        _buildInputRow(
+          'Catatan',
+          _catatan.isEmpty ? 'Ketuk untuk menambah' : _catatan,
+          _tambahCatatan,
+        ),
         const Divider(),
-        _buildInputRow('Aset', _selectedAsset?.assetName ?? 'Pilih Aset', _pilihAset),
-        
+        _buildInputRow(
+          'Aset',
+          _selectedAsset?.assetName ?? 'Pilih Aset',
+          _pilihAset,
+        ),
+
         const SizedBox(height: 40),
         ElevatedButton(
           onPressed: _isSaving ? null : _simpanTransaksi,
@@ -304,15 +401,26 @@ class _AddTransaksiState extends State<AddTransaksi> {
             minimumSize: const Size(double.infinity, 50),
             shape: RoundedRectangleBorder(borderRadius: AppTheme.borderRadius),
           ),
-          child: _isSaving
-              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-              // Teks tombol berubah secara dinamis
-              : Text(_isEditMode ? 'UPDATE TRANSAKSI' : 'SIMPAN', style: AppTheme.buttonText),
+          child:
+              _isSaving
+                  ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  )
+                  // Teks tombol berubah secara dinamis
+                  : Text(
+                    _isEditMode ? 'UPDATE TRANSAKSI' : 'SIMPAN',
+                    style: AppTheme.buttonText,
+                  ),
         ),
       ],
     );
   }
-    
+
   Widget _buildInputRow(String label, String value, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
@@ -321,15 +429,28 @@ class _AddTransaksiState extends State<AddTransaksi> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
             Row(
               children: [
                 Text(
                   value,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-                if(onTap != null)
-                  const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                if (onTap != null)
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppTheme.textSecondary,
+                  ),
               ],
             ),
           ],

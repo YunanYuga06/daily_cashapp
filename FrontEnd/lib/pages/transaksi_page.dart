@@ -89,8 +89,6 @@ class _TransaksiPageState extends State<TransaksiPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // MENGGANTI PLACEHOLDER DENGAN WIDGET YANG SEBENARNYA
-          // DAN MEMBERIKAN PARAMETER currentMonth
           HarianTab(key: _harianTabKey, currentMonth: _currentMonth),
           BulananTab(key: _bulananTabKey, currentMonth: _currentMonth), // Asumsi BulananTab juga butuh
           BudgetTab(key: _budgetTabKey, currentMonth: _currentMonth),

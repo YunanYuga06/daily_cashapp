@@ -22,44 +22,27 @@ const getAll = async (req, res, next) => {
     }
 };
 
-const update = async (id, user, request) => {
-    const reminderId = parseInt(id);
-
-    // Pastikan data ada dan milik user tersebut
-    const existing = await prismaClient.reminder.findFirst({
-        where: { id: reminderId, email_user: user.username }
-    });
-
-    if (!existing) {
-        throw new ResponseError(404, "Pengingat tidak ditemukan");
+const update = async (req, res, next) => {
+    try {
+        // Controller memanggil service, TIDAK menggunakan prismaClient secara langsung
+        const result = await reminderService.update(req.params.id, req.user, req.body);
+        res.status(200).json({
+            data: result
+        });
+    } catch (e) {
+        next(e);
     }
-
-    return prismaClient.reminder.update({
-        where: { id: reminderId },
-        data: {
-            description: request.description,
-            amount: request.amount,
-            period: request.period,
-            date: new Date(request.date)
-        },
-        select: { id: true, description: true, amount: true, period: true, date: true }
-    });
 };
 
-const remove = async (id, user) => {
-    const reminderId = parseInt(id);
-
-    const existing = await prismaClient.reminder.findFirst({
-        where: { id: reminderId, email_user: user.username }
-    });
-
-    if (!existing) {
-        throw new ResponseError(404, "Pengingat tidak ditemukan");
+const remove = async (req, res, next) => {
+    try {
+        await reminderService.remove(req.params.id, req.user);
+        res.status(200).json({
+            data: "OK"
+        });
+    } catch (e) {
+        next(e);
     }
-
-    return prismaClient.reminder.delete({
-        where: { id: reminderId }
-    });
 };
 
 export default {

@@ -13,6 +13,28 @@ const create = async (req, res, next) => {
     }
 };
 
+const update = async (req, res, next) => {
+    try {
+        const result = await transactionService.update(req.params.id, req.user.email, req.body);
+        res.status(200).json({
+            data: result
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+const remove = async (req, res, next) => {
+    try {
+        await transactionService.remove(req.params.id, req.user.email);
+        res.status(200).json({
+            data: "Transaksi berhasil dihapus"
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
 // Fungsi untuk mendapatkan ringkasan (summary) transaksi bulanan
 const getSummary = async (req, res, next) => {
     try {
@@ -45,5 +67,7 @@ const getAll = async (req, res, next) => {
 export default {
     create,
     getSummary,
-    getAll
+    getAll,
+    update,
+    remove
 }

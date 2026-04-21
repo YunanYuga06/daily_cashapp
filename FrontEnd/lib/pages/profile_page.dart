@@ -1,6 +1,7 @@
 // lib/pages/profile_page.dart
 import 'package:daily_cashapp/pages/halaman_crud/edit_profile.dart';
 import 'package:daily_cashapp/view/dashboard.dart';
+import 'package:daily_cashapp/widgets/kategori.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile_model.dart';
@@ -156,7 +157,10 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.settings,
           text: 'Pengaturan',
           onPressed: () {
-            // TODO: Navigasi ke halaman pengaturan
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const KategoriPage()),
+            );
           },
         ),
         const SizedBox(height: 16),

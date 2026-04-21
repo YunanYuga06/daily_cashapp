@@ -1,45 +1,58 @@
-// daily_cashapp/FrontEnd/lib/pages/halaman_crud/tambah_transaksi.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_cashapp/config/app_theme.dart';
 import 'package:daily_cashapp/service/api.service.dart';
-import 'package:daily_cashapp/models/budget.dart'; // Untuk model Category
-import 'package:daily_cashapp/models/asset_model.dart'; // Untuk model Asset
+import 'package:daily_cashapp/models/budget.dart'; 
+import 'package:daily_cashapp/models/asset_model.dart';
+import 'package:daily_cashapp/models/transaksi_model.dart'; // <-- Wajib import ini
 import 'pilih_item_page.dart';
 
 class AddTransaksi extends StatefulWidget {
-  const AddTransaksi({super.key});
+  // Tambahkan parameter opsional untuk mode Edit
+  final TransactionModel? existingTransaction;
+
+  const AddTransaksi({super.key, this.existingTransaction});
 
   @override
   State<AddTransaksi> createState() => _AddTransaksiState();
 }
 
 class _AddTransaksiState extends State<AddTransaksi> {
-  // State untuk UI
   bool _isExpense = true;
   bool _isSaving = false;
   bool _isLoading = true;
 
-  // Controller
   final _totalController = TextEditingController();
   final _catatanController = TextEditingController();
 
-  // Data dinamis dari API
   late List<Category> _daftarKategori;
   late List<AssetModel> _daftarAset;
 
-  // Data yang dipilih oleh pengguna
   DateTime _selectedDate = DateTime.now();
   Category? _selectedCategory;
   AssetModel? _selectedAsset;
   String _catatan = '';
 
+  // Getter untuk mengecek apakah sedang dalam mode edit
+  bool get _isEditMode => widget.existingTransaction != null;
+
   @override
   void initState() {
     super.initState();
+    _setupEditData();
     _fetchInitialData();
+  }
+
+  // Jika masuk dalam mode Edit, isi form dengan data lama
+  void _setupEditData() {
+    if (_isEditMode) {
+      final tx = widget.existingTransaction!;
+      _isExpense = tx.type == 'expense';
+      _totalController.text = tx.amount.toString();
+      _catatan = tx.description ?? '';
+      _selectedDate = tx.date;
+    }
   }
 
   @override
@@ -54,8 +67,7 @@ class _AddTransaksiState extends State<AddTransaksi> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
       if (token == null) throw Exception("Token tidak ditemukan");
-
-      // Ambil data kategori dan aset secara bersamaan
+      
       final results = await Future.wait([
         ApiService.getCategories(token),
         ApiService.getAssets(token),
@@ -65,9 +77,20 @@ class _AddTransaksiState extends State<AddTransaksi> {
         setState(() {
           _daftarKategori = results[0] as List<Category>;
           _daftarAset = results[1] as List<AssetModel>;
-          // Set nilai default jika list tidak kosong
-          if (_daftarKategori.isNotEmpty) _selectedCategory = _daftarKategori.first;
-          if (_daftarAset.isNotEmpty) _selectedAsset = _daftarAset.first;
+          
+          if (_isEditMode) {
+            // Cocokkan ID Kategori lama dengan daftar yang baru ditarik
+            try {
+              _selectedCategory = _daftarKategori.firstWhere(
+                (c) => c.id == widget.existingTransaction!.category.id
+              );
+            } catch (e) {}
+          } else {
+            // Jika mode tambah, pilih yang pertama (default)
+            if (_daftarKategori.isNotEmpty) _selectedCategory = _daftarKategori.first;
+            if (_daftarAset.isNotEmpty) _selectedAsset = _daftarAset.first;
+          }
+          
           _isLoading = false;
         });
       }
@@ -99,19 +122,30 @@ class _AddTransaksiState extends State<AddTransaksi> {
       if (token == null) throw Exception("Token tidak ditemukan");
 
       final transactionData = TransactionData(
-        categoryId: _selectedCategory!.id, // <-- Menggunakan ID asli
+        categoryId: _selectedCategory!.id,
         amount: int.parse(_totalController.text),
         type: _isExpense ? 'expense' : 'income',
         date: _selectedDate,
-        assetId: _selectedAsset?.id, // <-- Menggunakan ID asli (opsional)
+        assetId: _selectedAsset?.id,
         description: _catatan,
       );
 
-      await ApiService.createTransaction(token, transactionData);
+      if (_isEditMode) {
+        // Panggil fungsi Update API
+        await ApiService.updateTransaction(token, widget.existingTransaction!.id, transactionData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi berhasil diperbarui!')));
+        }
+      } else {
+        // Panggil fungsi Create API
+        await ApiService.createTransaction(token, transactionData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi berhasil disimpan!')));
+        }
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi berhasil disimpan!')));
-        Navigator.pop(context, true);
+        Navigator.pop(context, true); // Kembali ke halaman sebelumnya dan kirim sinyal 'true' untuk refresh data
       }
     } catch (e) {
       if (mounted) {
@@ -121,21 +155,6 @@ class _AddTransaksiState extends State<AddTransaksi> {
       if (mounted) {
         setState(() => _isSaving = false);
       }
-    }
-  }
-
-  void _onNumpadTap(String value) {
-    if (value == 'del') {
-      if (_totalController.text.isNotEmpty) {
-        setState(() {
-          _totalController.text = _totalController.text.substring(0, _totalController.text.length - 1);
-        });
-      }
-    } else {
-      if (value == '.' && _totalController.text.contains('.')) return;
-      setState(() {
-        _totalController.text += value;
-      });
     }
   }
 
@@ -183,7 +202,9 @@ class _AddTransaksiState extends State<AddTransaksi> {
       builder: (context) => AlertDialog(
         title: const Text('Tambah Catatan'),
         content: TextField(
-          controller: _catatanController, autofocus: true, decoration: const InputDecoration(hintText: 'Masukkan catatan...'),
+          controller: _catatanController, 
+          autofocus: true, 
+          decoration: const InputDecoration(hintText: 'Masukkan catatan...'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
@@ -204,28 +225,22 @@ class _AddTransaksiState extends State<AddTransaksi> {
           icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Tambah Transaksi', style: AppTheme.heading2),
+        // Judul AppBar berubah secara dinamis
+        title: Text(_isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi', style: AppTheme.heading2),
         backgroundColor: AppTheme.surface,
         elevation: 1,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppTheme.spacingLarge),
-                    child: Column(
-                      children: [
-                        _buildTypeSelector(),
-                        const SizedBox(height: AppTheme.spacingLarge),
-                        _buildFormFields(),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildNumpad(),
-              ],
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spacingLarge),
+              child: Column(
+                children: [
+                  _buildTypeSelector(),
+                  const SizedBox(height: AppTheme.spacingLarge),
+                  _buildFormFields(),
+                ],
+              ),
             ),
     );
   }
@@ -251,6 +266,28 @@ class _AddTransaksiState extends State<AddTransaksi> {
   Widget _buildFormFields() {
     return Column(
       children: [
+        // Total menggunakan TextField Native
+        TextField(
+          controller: _totalController,
+          keyboardType: TextInputType.number, // Memanggil numpad native Android/iOS
+          style: TextStyle(
+            fontSize: 28, 
+            fontWeight: FontWeight.bold, 
+            color: _isExpense ? AppTheme.expense : AppTheme.income
+          ),
+          decoration: InputDecoration(
+            labelText: 'Total Transaksi',
+            prefixText: 'Rp ',
+            prefixStyle: TextStyle(
+              fontSize: 28, 
+              fontWeight: FontWeight.bold, 
+              color: _isExpense ? AppTheme.expense : AppTheme.income
+            ),
+            border: const UnderlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 24),
+        
         _buildInputRow('Tanggal', DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate), () => _selectDate(context)),
         const Divider(),
         _buildInputRow('Kategori', _selectedCategory?.name ?? 'Pilih Kategori', _pilihKategori),
@@ -258,10 +295,8 @@ class _AddTransaksiState extends State<AddTransaksi> {
         _buildInputRow('Catatan', _catatan.isEmpty ? 'Ketuk untuk menambah' : _catatan, _tambahCatatan),
         const Divider(),
         _buildInputRow('Aset', _selectedAsset?.assetName ?? 'Pilih Aset', _pilihAset),
-        const Divider(),
-        _buildInputRow('Total', _totalController.text, null, isAmount: true),
-        const Divider(),
-        const SizedBox(height: AppTheme.spacingLarge),
+        
+        const SizedBox(height: 40),
         ElevatedButton(
           onPressed: _isSaving ? null : _simpanTransaksi,
           style: ElevatedButton.styleFrom(
@@ -271,13 +306,14 @@ class _AddTransaksiState extends State<AddTransaksi> {
           ),
           child: _isSaving
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-              : const Text('SIMPAN', style: AppTheme.buttonText),
+              // Teks tombol berubah secara dinamis
+              : Text(_isEditMode ? 'UPDATE TRANSAKSI' : 'SIMPAN', style: AppTheme.buttonText),
         ),
       ],
     );
   }
     
-  Widget _buildInputRow(String label, String value, VoidCallback? onTap, {bool isAmount = false}) {
+  Widget _buildInputRow(String label, String value, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -288,15 +324,9 @@ class _AddTransaksiState extends State<AddTransaksi> {
             Text(label, style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary)),
             Row(
               children: [
-                if(isAmount)
-                  Text('Rp ', style: TextStyle(fontSize: 18, color: _isExpense ? AppTheme.expense : AppTheme.income)),
                 Text(
-                  value.isEmpty && isAmount ? '0' : value,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isAmount ? (_isExpense ? AppTheme.expense : AppTheme.income) : AppTheme.textPrimary,
-                  ),
+                  value,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
                 ),
                 if(onTap != null)
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
@@ -304,43 +334,6 @@ class _AddTransaksiState extends State<AddTransaksi> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNumpad() {
-    final List<String> buttons = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
-    return Container(
-      color: Colors.grey[200],
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          childAspectRatio: 2.2,
-          mainAxisSpacing: 4,
-          crossAxisSpacing: 4,
-        ),
-        itemCount: buttons.length,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemBuilder: (context, index) {
-          final item = buttons[index];
-          if (item == 'del') {
-            return _numpadButton(item, icon: Icons.backspace_outlined);
-          }
-          return _numpadButton(item);
-        },
-      ),
-    );
-  }
-
-  Widget _numpadButton(String value, {IconData? icon}) {
-    return InkWell(
-      onTap: () => _onNumpadTap(value),
-      child: Center(
-        child: icon != null
-            ? Icon(icon, color: AppTheme.textPrimary)
-            : Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
       ),
     );
   }

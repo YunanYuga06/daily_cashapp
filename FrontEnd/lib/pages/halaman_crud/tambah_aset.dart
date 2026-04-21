@@ -1,87 +1,101 @@
-import 'package:daily_cashapp/service/api.service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daily_cashapp/config/app_theme.dart';
+import 'package:daily_cashapp/service/api.service.dart';
+import 'package:daily_cashapp/models/asset_model.dart'; // Pastikan path ini benar
 
 class TambahAsetPage extends StatefulWidget {
-  const TambahAsetPage({super.key});
+  final AssetModel? existingAsset;
+
+  const TambahAsetPage({super.key, this.existingAsset});
 
   @override
   State<TambahAsetPage> createState() => _TambahAsetPageState();
 }
 
 class _TambahAsetPageState extends State<TambahAsetPage> {
-  final TextEditingController _namaAsetController = TextEditingController();
-  final TextEditingController _totalController = TextEditingController();
-
-  // Sesuaikan pilihan ini kalau di backend kamu punya standar tertentu
-  String _selectedJenis = 'Cash';
-
+  final _formKey = GlobalKey<FormState>();
+  final _namaController = TextEditingController();
+  final _saldoController = TextEditingController();
+  
+  String _selectedType = 'Dompet';
   bool _isSaving = false;
+  bool get _isEditMode => widget.existingAsset != null;
+
+  final List<String> _tipeAset = ['Dompet', 'Bank', 'E-Wallet', 'Lainnya'];
+
+  @override
+  void initState() {
+    super.initState();
+    _setupEditData();
+  }
+
+  void _setupEditData() {
+    if (_isEditMode) {
+      final asset = widget.existingAsset!;
+      _namaController.text = asset.assetName;
+      _saldoController.text = asset.currentAmount.toString(); 
+      if (_tipeAset.contains(asset.assetType)) {
+        _selectedType = asset.assetType;
+      } else {
+        _selectedType = 'Lainnya';
+      }
+    }
+  }
 
   @override
   void dispose() {
-    _namaAsetController.dispose();
-    _totalController.dispose();
+    _namaController.dispose();
+    _saldoController.dispose();
     super.dispose();
   }
 
-  int _parseAmountToInt(String input) {
-    // Hapus semua selain digit
-    final digitsOnly = input.replaceAll(RegExp(r'[^0-9]'), '');
-    return int.tryParse(digitsOnly) ?? 0;
-  }
-
   Future<void> _simpanAset() async {
-    if (_isSaving) return;
-
-    final nama = _namaAsetController.text.trim();
-    final amount = _parseAmountToInt(_totalController.text);
-
-    if (nama.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama aset harus diisi')),
-      );
-      return;
-    }
-
-    if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Total aset harus lebih dari 0')),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
+      if (token == null) throw Exception("Token tidak ditemukan");
 
-      if (token == null) {
-        throw Exception('Token tidak ditemukan. Silakan login ulang.');
+      final int saldo = int.parse(_saldoController.text);
+
+      if (_isEditMode) {
+        await ApiService.updateAsset(
+          token: token,
+          assetId: widget.existingAsset!.id,
+          assetName: _namaController.text.trim(),
+          assetType: _selectedType,
+          initialAmount: saldo,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aset berhasil diperbarui!')));
+        }
+      } else {
+        await ApiService.createAsset(
+          token: token,
+          assetName: _namaController.text.trim(),
+          assetType: _selectedType,
+          initialAmount: saldo,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aset berhasil ditambahkan!')));
+        }
       }
 
-      await ApiService.createAsset(
-        token: token,
-        assetName: nama,
-        assetType: _selectedJenis,
-        initialAmount: amount,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aset berhasil ditambahkan')),
-      );
-
-      Navigator.pop(context, true); // <- ini penting supaya halaman aset refresh
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menambahkan aset: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -89,65 +103,73 @@ class _TambahAsetPageState extends State<TambahAsetPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Aset'),
+        title: Text(_isEditMode ? 'Edit Aset' : 'Tambah Aset', style: AppTheme.heading2),
+        backgroundColor: AppTheme.surface,
+        elevation: 1,
+        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _namaAsetController,
-              decoration: const InputDecoration(
-                labelText: 'Nama Aset',
-                border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.spacingLarge),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Aset',
+                  hintText: 'Cth: BCA, Gopay, Dompet Utama',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value!.isEmpty ? 'Nama aset wajib diisi' : null,
               ),
-            ),
-            const SizedBox(height: 12),
-
-            DropdownButtonFormField<String>(
-              value: _selectedJenis,
-              items: const [
-                DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                DropdownMenuItem(value: 'Bank', child: Text('Bank')),
-                DropdownMenuItem(value: 'E-Wallet', child: Text('E-Wallet')),
-                DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
-              ],
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() => _selectedJenis = value);
-              },
-              decoration: const InputDecoration(
-                labelText: 'Jenis Aset',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Tipe Aset',
+                  border: OutlineInputBorder(),
+                ),
+                items: _tipeAset.map((tipe) {
+                  return DropdownMenuItem(value: tipe, child: Text(tipe));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedType = val);
+                },
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-            TextField(
-              controller: _totalController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Total Aset (angka saja)',
-                hintText: 'contoh: 1500000',
-                border: OutlineInputBorder(),
+              TextFormField(
+                controller: _saldoController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Saldo',
+                  prefixText: 'Rp ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Saldo wajib diisi';
+                  if (int.tryParse(value) == null) return 'Masukkan angka yang valid';
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 32),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
+              ElevatedButton(
                 onPressed: _isSaving ? null : _simpanAset,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.borderRadius),
+                ),
                 child: _isSaving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('SIMPAN'),
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                    : Text(_isEditMode ? 'UPDATE ASET' : 'SIMPAN ASET', style: AppTheme.buttonText),
               ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

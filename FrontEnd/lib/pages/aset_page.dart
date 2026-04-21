@@ -149,23 +149,99 @@ class _HalamanAsetState extends State<HalamanAset> {
   }
 
   Widget _buildAsetItem(AssetModel asset) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: ListTile(
-        tileColor: Colors.grey[200],
-        title: Text(
-          asset.assetName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+    return Dismissible(
+      key: Key(asset.id.toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Hapus Aset?"),
+              content: Text("Yakin ingin menghapus dompet '${asset.assetName}'?\n\nCatatan: Jika aset ini sudah memiliki transaksi, penghapusan akan ditolak untuk menjaga riwayat keuangan Anda."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("Batal"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      
+      // Aksi Hapus via API
+      onDismissed: (direction) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        
+        if (token != null) {
+          try {
+            await ApiService.deleteAsset(token, asset.id);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Aset berhasil dihapus')),
+              );
+              _fetchAssets();
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Gagal menghapus! Pastikan aset ini tidak terikat dengan transaksi.'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+              _fetchAssets(); 
+            }
+          }
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
         ),
-        subtitle: asset.assetType.isNotEmpty ? Text(asset.assetType) : null,
-        trailing: Text(
-          currencyFormatter.format(asset.currentAmount),
-          style: const TextStyle(color: Colors.blue),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      
+      child: Card(
+        elevation: 1,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        child: ListTile(
+          tileColor: Colors.grey[200],
+          leading: const CircleAvatar(
+            backgroundColor: Colors.blueAccent,
+            child: Icon(Icons.account_balance_wallet, color: Colors.white),
+          ),
+          title: Text(
+            asset.assetName,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: asset.assetType.isNotEmpty ? Text(asset.assetType) : null,
+          trailing: Text(
+            currencyFormatter.format(asset.currentAmount),
+            style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TambahAsetPage(existingAsset: asset),
+              ),
+            );
+            if (result == true && mounted) {
+              _fetchAssets();
+            }
+          },
         ),
-        onTap: () {
-          // TODO: navigasi ke detail/edit aset kalau kamu mau tambah fitur berikutnya
-        },
       ),
     );
   }

@@ -1,15 +1,11 @@
-// daily_cashapp/FrontEnd/lib/widgets/harian_tab.dart
-
+import 'package:daily_cashapp/pages/halaman_crud/tambah_transaksi.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// PASTIKAN SEMUA IMPORT INI ADA
 import '../models/transaksi_model.dart';
 import '../models/budget.dart'; // Category ada di sini
 import '../models/asset_model.dart'; // AssetModel ada di sini
 import '../service/api.service.dart';
-// import '../config/app_theme.dart'; // Hapus atau perbaiki path jika tidak ada
 
 class HarianTab extends StatefulWidget {
   final DateTime currentMonth; 
@@ -179,21 +175,91 @@ class _HarianTabState extends State<HarianTab> {
 
   Widget _buildTransactionTile(TransactionModel tx) {
     final bool isExpense = tx.type == 'expense';
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.grey.shade200,
-        child: Icon(
-          isExpense ? Icons.arrow_downward : Icons.arrow_upward,
-          color: isExpense ? Colors.red : Colors.blue,
-        ),
+    return Dismissible(
+      key: Key(tx.id.toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Konfirmasi Hapus"),
+              content: Text("Apakah Anda yakin ingin menghapus transaksi '${tx.category.name}' sebesar ${_currencyFormatter.format(tx.amount)}?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("Batal"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text(
+                    "Hapus",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      
+      onDismissed: (direction) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        
+        if (token != null) {
+          try {
+            await ApiService.deleteTransaction(token, tx.id);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Transaksi berhasil dihapus')),
+              );
+              _fetchTransactions();
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal menghapus transaksi: $e')),
+              );
+              _fetchTransactions();
+            }
+          }
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
-      title: Text(tx.category.name),
-      subtitle: Text(tx.description ?? 'Tanpa Catatan'),
-      trailing: Text(
-        _currencyFormatter.format(tx.amount),
-        style: TextStyle(
-          color: isExpense ? Colors.red : Colors.blue,
-          fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddTransaksi(existingTransaction: tx), 
+            ),
+          ).then((_) {
+            _fetchTransactions();
+          });
+        },
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.grey.shade200,
+            child: Icon(
+              isExpense ? Icons.arrow_downward : Icons.arrow_upward,
+              color: isExpense ? Colors.red : Colors.blue,
+            ),
+          ),
+          title: Text(tx.category.name),
+          subtitle: Text(tx.description ?? 'Tanpa Catatan'),
+          trailing: Text(
+            _currencyFormatter.format(tx.amount),
+            style: TextStyle(
+              color: isExpense ? Colors.red : Colors.blue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

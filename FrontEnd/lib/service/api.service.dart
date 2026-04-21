@@ -112,6 +112,40 @@ class ApiService {
       throw Exception('Gagal menyimpan transaksi: ${response.body}');
     }
   }
+  static Future<void> updateTransaction(
+      String token, int transactionId, TransactionData transaction) async {
+    final url = Uri.parse('${Env.baseUrl}/transactions/$transactionId');
+
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode(transaction.toJson()),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memperbarui transaksi: ${response.body}');
+    }
+  }
+
+  static Future<void> deleteTransaction(String token, int transactionId) async {
+    final url = Uri.parse('${Env.baseUrl}/transactions/$transactionId');
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus transaksi: ${response.body}');
+    }
+  }
 
   static Future<List<TransactionModel>> getTransactions(
     String token, {
@@ -188,6 +222,49 @@ class ApiService {
       return jsonList.map((json) => AssetModel.fromJson(json)).toList();
     } else {
       throw Exception('Gagal memuat aset. Status: ${response.statusCode}');
+    }
+  }
+
+
+  static Future<void> updateAsset({
+    required String token,
+    required int assetId,
+    required String assetName,
+    required String assetType,
+    required int initialAmount,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/assets/$assetId');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'asset_name': assetName,
+        'asset_type': assetType,
+        'first_amount': initialAmount,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memperbarui aset: ${response.body}');
+    }
+  }
+
+  static Future<void> deleteAsset(String token, int assetId) async {
+    final url = Uri.parse('${Env.baseUrl}/assets/$assetId');
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus aset: ${response.body}');
     }
   }
 
@@ -316,6 +393,77 @@ class ApiService {
     }
   }
 
+  // TAMBAHAN: Buat Kategori
+  static Future<void> createCategory({
+    required String token,
+    required String name,
+    required String type,
+    String? description,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/categories');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'name': name,
+        'type': type,
+        'description': description,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal membuat kategori: ${response.body}');
+    }
+  }
+
+  // TAMBAHAN: Update Kategori
+  static Future<void> updateCategory({
+    required String token,
+    required int id,
+    required String name,
+    required String type,
+    String? description,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/categories/$id');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'name': name,
+        'type': type,
+        'description': description,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memperbarui kategori: ${response.body}');
+    }
+  }
+
+  // TAMBAHAN: Hapus Kategori
+  static Future<void> deleteCategory(String token, int id) async {
+    final url = Uri.parse('${Env.baseUrl}/categories/$id');
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus kategori: ${response.body}');
+    }
+  }
+
   // --- FUNGSI SUMMARY & PROFIL ---
   static Future<SummaryModel> getSummary(String token, DateTime date) async {
     final url = Uri.parse(
@@ -431,6 +579,51 @@ class ApiService {
       return reminderModelFromJson(response.body);
     } else {
       throw Exception('Gagal memuat pengingat: ${response.body}');
+    }
+  }
+
+  static Future<void> updateReminder({
+    required String token,
+    required int id,
+    required String description,
+    required int amount,
+    required String period,
+    required DateTime date,
+  }) async {
+    final url = Uri.parse('${Env.baseUrl}/reminders/$id');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: jsonEncode({
+        'description': description,
+        'amount': amount,
+        'period': period,
+        'date': date.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memperbarui pengingat: ${response.body}');
+    }
+  }
+
+  // TAMBAHKAN INI UNTUK DELETE
+  static Future<void> deleteReminder(String token, int id) async {
+    final url = Uri.parse('${Env.baseUrl}/reminders/$id');
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus pengingat: ${response.body}');
     }
   }
 }

@@ -3,11 +3,8 @@ import { validate } from "../validations/validation.js";
 import { createTransactionValidation } from "../validations/transaction.validation.js";
 import { ResponseError } from "../error/response.error.js";
 
-// Fungsi untuk membuat transaksi baru DENGAN pembaruan saldo aset
 const create = async (user, request) => {
     const transaction = validate(createTransactionValidation, request);
-
-    // Jika transaksi TIDAK terhubung dengan aset, langsung buat transaksi saja
     if (!transaction.id_asset) {
         return prismaClient.transaction.create({
             data: {
@@ -18,10 +15,7 @@ const create = async (user, request) => {
         });
     }
 
-    // Jika terhubung dengan aset, gunakan database transaction
-    // Ini memastikan kedua operasi (update aset & create transaksi) berhasil atau gagal bersamaan
     return prismaClient.$transaction(async (prisma) => {
-        // 1. Cari aset yang dipilih untuk memastikan aset itu ada dan milik user
         const asset = await prisma.asset.findUnique({
             where: {
                 id: transaction.id_asset,
@@ -32,26 +26,20 @@ const create = async (user, request) => {
         if (!asset) {
             throw new ResponseError(404, "Aset tidak ditemukan");
         }
-
-        // 2. Jika ini adalah pengeluaran, cek dulu apakah saldonya mencukupi
         if (transaction.type === 'expense' && asset.current_amount < transaction.amount) {
             throw new ResponseError(400, "Saldo aset tidak mencukupi untuk transaksi ini");
         }
-
-        // 3. Perbarui saldo aset berdasarkan jenis transaksi
         await prisma.asset.update({
             where: {
                 id: transaction.id_asset
             },
             data: {
                 current_amount: {
-                    // Gunakan 'increment' untuk pemasukan, 'decrement' untuk pengeluaran
                     [transaction.type === 'income' ? 'increment' : 'decrement']: transaction.amount
                 }
             }
         });
 
-        // 4. Setelah aset diupdate, baru buat catatan transaksinya
         const newTransaction = await prisma.transaction.create({
             data: {
                 ...transaction,
@@ -63,9 +51,6 @@ const create = async (user, request) => {
         return newTransaction;
     });
 };
-
-
-// --- FUNGSI LAINNYA (TETAP SAMA) ---
 
 const mapCategoryNames = async (summaryData) => {
     if (summaryData.length === 0) return [];
@@ -131,8 +116,94 @@ const getAll = async (user, year, month) => {
     });
 };
 
+const update = async (id, email_user, request) => {
+    const transactionId = parseInt(id);
+    const data = request; 
+
+    return prismaClient.$transaction(async (prisma) => {
+        const existing = await prisma.transaction.findFirst({
+            where: { id: transactionId, email_user: email_user }
+        });
+
+        if (!existing) {
+            throw new ResponseError(404, "Transaksi tidak ditemukan atau Anda tidak memiliki akses");
+        }
+        if (existing.id_asset) {
+            await prisma.asset.update({
+                where: { id: existing.id_asset },
+                data: {
+                    current_amount: {
+                        [existing.type === 'income' ? 'decrement' : 'increment']: existing.amount
+                    }
+                }
+            });
+        }
+        if (data.id_asset) {
+            const targetAsset = await prisma.asset.findUnique({
+                where: { id: data.id_asset }
+            });
+
+            if (!targetAsset) {
+                throw new ResponseError(404, "Aset tujuan tidak ditemukan");
+            }
+            if (data.type === 'expense' && targetAsset.current_amount < data.amount) {
+                throw new ResponseError(400, "Saldo aset tidak mencukupi untuk perubahan transaksi ini");
+            }
+
+            await prisma.asset.update({
+                where: { id: data.id_asset },
+                data: {
+                    current_amount: {
+                        [data.type === 'income' ? 'increment' : 'decrement']: data.amount
+                    }
+                }
+            });
+        }
+        return prisma.transaction.update({
+            where: { id: transactionId },
+            data: {
+                id_category: data.id_category,
+                id_asset: data.id_asset,
+                amount: data.amount,
+                type: data.type,
+                description: data.description,
+                date: new Date(data.date)
+            }
+        });
+    });
+};
+
+const remove = async (id, email_user) => {
+    const transactionId = parseInt(id);
+
+    return prismaClient.$transaction(async (prisma) => {
+        const existing = await prisma.transaction.findFirst({
+            where: { id: transactionId, email_user: email_user }
+        });
+
+        if (!existing) {
+            throw new ResponseError(404, "Transaksi tidak ditemukan atau Anda tidak memiliki akses");
+        }
+        if (existing.id_asset) {
+            await prisma.asset.update({
+                where: { id: existing.id_asset },
+                data: {
+                    current_amount: {
+                        [existing.type === 'income' ? 'decrement' : 'increment']: existing.amount
+                    }
+                }
+            });
+        }
+        return prisma.transaction.delete({
+            where: { id: transactionId }
+        });
+    });
+};
+
 export default {
     create,
     getSummary,
-    getAll
+    getAll,
+    update,
+    remove
 }

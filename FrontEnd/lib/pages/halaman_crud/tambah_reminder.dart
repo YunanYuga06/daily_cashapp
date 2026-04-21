@@ -1,219 +1,127 @@
-import 'package:daily_cashapp/service/api.service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daily_cashapp/config/app_theme.dart';
+import 'package:daily_cashapp/service/api.service.dart';
+import 'package:daily_cashapp/models/reminder_model.dart'; // Pastikan model ini ada
 
 class TambahReminderPage extends StatefulWidget {
+  final ReminderModel? existingReminder; // Untuk mode Edit
+
+  const TambahReminderPage({super.key, this.existingReminder});
+
   @override
-  _TambahReminderPageState createState() => _TambahReminderPageState();
+  State<TambahReminderPage> createState() => _TambahReminderPageState();
 }
 
 class _TambahReminderPageState extends State<TambahReminderPage> {
-  int _selectedIndex = 2; // default Tahunan
-  final _descriptionController = TextEditingController();
-  final _numericController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _descController = TextEditingController();
+  final _amountController = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  String _selectedPeriod = 'Sekali';
+  bool _isSaving = false;
 
-  DateTime? _selectedDate;
+  bool get _isEditMode => widget.existingReminder != null;
 
-  final List<String> _tabs = ['Mingguan', 'Bulanan', 'Tahunan'];
-
-  Future<void> _pickDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditMode) {
+      _descController.text = widget.existingReminder!.description;
+      _amountController.text = widget.existingReminder!.amount.toString();
+      _selectedDate = widget.existingReminder!.date;
+      _selectedPeriod = widget.existingReminder!.period;
     }
-  }
-
-  void _onKeyTap(String value) {
-    setState(() {
-      if (value == '⌫') {
-        if (_numericController.text.isNotEmpty) {
-          _numericController.text = _numericController.text
-              .substring(0, _numericController.text.length - 1);
-        }
-      } else {
-        _numericController.text += value;
-      }
-    });
   }
 
   Future<void> _saveReminder() async {
-    if (_descriptionController.text.isEmpty ||
-        _numericController.text.isEmpty ||
-        _selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Deskripsi, jumlah, dan tanggal harus diisi!')),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      if (token == null) throw Exception("Token tidak ditemukan");
+      
+      if (token == null) throw Exception('Token tidak ditemukan');
 
-      await ApiService.createReminder(
-        token: token,
-        description: _descriptionController.text,
-        amount: int.parse(_numericController.text),
-        period: _tabs[_selectedIndex],
-        date: _selectedDate!,
-      );
+      if (_isEditMode) {
+        // Panggil fungsi Update dengan Named Parameters
+        await ApiService.updateReminder(
+          token: token,
+          id: widget.existingReminder!.id,
+          description: _descController.text,
+          amount: int.parse(_amountController.text),
+          period: _selectedPeriod,
+          date: _selectedDate,
+        );
+      } else {
+        // Panggil fungsi Create dengan Named Parameters
+        await ApiService.createReminder(
+          token: token,
+          description: _descController.text,
+          amount: int.parse(_amountController.text),
+          period: _selectedPeriod,
+          date: _selectedDate,
+        );
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengingat berhasil disimpan!')),
-      );
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pengingat berhasil disimpan!'))
+        );
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan pengingat: $e')),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Tambah Reminder'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
+        title: Text(_isEditMode ? 'Edit Pengingat' : 'Tambah Pengingat', style: AppTheme.heading2),
+        backgroundColor: AppTheme.surface,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(_tabs.length, (index) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedIndex = index;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedIndex == index
-                                ? Colors.blue.shade400
-                                : Colors.grey.shade300,
-                            foregroundColor: _selectedIndex == index
-                                ? Colors.white
-                                : Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(_tabs[index]),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                SizedBox(height: 20),
-                TextField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(labelText: 'Deskripsi'),
-                ),
-                SizedBox(height: 10),
-                GestureDetector(
-                  onTap: _pickDate,
-                  child: AbsorbPointer(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Tempo',
-                        hintText: 'Pilih Tanggal',
-                      ),
-                      controller: TextEditingController(
-                          text: _selectedDate == null
-                              ? ''
-                              : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _saveReminder,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlue,
-                      shape: StadiumBorder(),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                    ),
-                    child: Text('SIMPAN'),
-                  ),
-                ),
-                SizedBox(height: 30),
-                Center(
-                  child: Text(
-                    _numericController.text,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF9F6EC),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: GridView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: 12,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 1.8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final keys = [
-                        '1', '2', '3',
-                        '4', '5', '6',
-                        '7', '8', '9',
-                        '.', '0', '⌫',
-                      ];
-                      final key = keys[index];
-                      return ElevatedButton(
-                        onPressed: () => _onKeyTap(key),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: key == '⌫'
-                            ? Icon(Icons.backspace_outlined)
-                            : Text(
-                                key,
-                                style: TextStyle(fontSize: 20),
-                              ),
-                      );
-                    },
-                  ),
-                )
-              ],
-            ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.spacingLarge),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Deskripsi', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number, // Menggunakan keyboard native
+                decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text("Tanggal Tagihan"),
+                subtitle: Text(DateFormat('dd MMMM yyyy').format(_selectedDate)),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now(), lastDate: DateTime(2030));
+                  if (picked != null) setState(() => _selectedDate = picked);
+                },
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _isSaving ? null : _saveReminder,
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBlue, minimumSize: const Size(double.infinity, 50)),
+                child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : Text(_isEditMode ? 'UPDATE' : 'SIMPAN'),
+              )
+            ],
           ),
         ),
       ),

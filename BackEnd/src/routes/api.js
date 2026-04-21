@@ -23,10 +23,15 @@ privateRouter.put(
 
 // Category Routes
 privateRouter.get("/api/categories", categoryController.getAll);
+privateRouter.post("/api/categories", categoryController.create); // <-- Tambah ini
+privateRouter.put("/api/categories/:id", categoryController.update); // <-- Tambah ini
+privateRouter.delete("/api/categories/:id", categoryController.remove);
 
 // Asset Routes
 privateRouter.get("/api/assets", assetController.getAll);
 privateRouter.post("/api/assets", assetController.create);
+privateRouter.put("/api/assets/:id", assetController.update);
+privateRouter.delete("/api/assets/:id", assetController.remove);
 
 // Budget Routes
 privateRouter.post("/api/budgets", budgetController.create);
@@ -39,9 +44,13 @@ privateRouter.delete("/api/budgets/:id", budgetController.remove);
 privateRouter.get("/api/transactions/summary", transactionController.getSummary);
 privateRouter.post("/api/transactions", transactionController.create);
 privateRouter.get("/api/transactions", transactionController.getAll);
+privateRouter.put("/api/transactions/:id", transactionController.update);
+privateRouter.delete("/api/transactions/:id", transactionController.remove);
 
 // Reminder Routes
 privateRouter.get("/api/reminders", reminderController.getAll);
 privateRouter.post("/api/reminders", reminderController.create);
+privateRouter.put("/api/reminders/:id", reminderController.update);
+privateRouter.delete("/api/reminders/:id", reminderController.remove);
 
 export { privateRouter };

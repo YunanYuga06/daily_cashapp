@@ -5,6 +5,14 @@ import { logger } from "./application/logging.js";
 // Optional debug: memastikan env kebaca
 logger.info(`SECRET_KEY loaded: ${Boolean(process.env.SECRET_KEY)}`);
 
-web.listen(8080, "0.0.0.0", () => {
-  logger.info("Server berjalan di port 3000");
-});
+const PORT = process.env.PORT || 3000;
+
+// Hanya jalankan 'listen' saat di lokal. Di Vercel, Vercel yang akan mengaturnya.
+if (process.env.NODE_ENV !== 'production') {
+    web.listen(PORT, () => {
+        logger.info(`App start on port ${PORT}`);
+    });
+}
+
+
+export default { web };

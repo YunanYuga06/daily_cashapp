@@ -1,43 +1,7 @@
 // src/middlewares/upload.middleware.js
 import multer from "multer";
 
-function safeSlug(value) {
-  return String(value || "unknown")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
-function extFromMime(mime) {
-  if (mime === "image/png") return ".png";
-  if (mime === "image/jpeg" || mime === "image/jpg") return ".jpg";
-  return "";
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/images");
-  },
-  filename: (req, file, cb) => {
-    const extension = extFromMime(file.mimetype);
-    if (!extension) return cb(new Error("Format file tidak didukung"), "");
-
-    // ✅ Ambil identifier dari JWT payload kamu (yang kamu pakai di controller)
-    // Biasanya ini adalah email, tapi disimpan dalam field "username".
-    const identifier =
-      req.user?.email ||
-      req.user?.username ||
-      req.user?.email_user ||
-      req.body?.email ||
-      "unknown";
-
-    const slug = safeSlug(identifier);
-
-    // Nama file tetap per user
-    cb(null, `profile_${slug}${extension}`);
-  },
-});
+const storage = multer.memoryStorage(); // File akan disimpan sebagai Buffer di RAM sementara
 
 const fileFilter = (req, file, cb) => {
   const ok =

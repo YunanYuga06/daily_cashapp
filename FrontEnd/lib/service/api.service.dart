@@ -511,8 +511,9 @@ class ApiService {
   request.headers['Authorization'] = 'Bearer $token';
   request.fields['name'] = name;
 
+  // KODE YANG BENAR DI FLUTTER
   if (imageFile != null) {
-    request.files.add(await http.MultipartFile.fromPath('photo', imageFile.path));
+    request.files.add(await http.MultipartFile.fromPath('profile_picture', imageFile.path));
   }
 
   var streamedResponse = await request.send();

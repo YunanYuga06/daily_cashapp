@@ -119,7 +119,7 @@ export const updateUser = async (req, res, next) => {
     }
 
     // 5. Simpan perubahan ke Database (Supabase PostgreSQL via Prisma)
-    const result = await userService.update(req.user.username, requestData);
+    const result = await userService.updateUser(req.user.username, requestData);
     
     return res.status(200).json({
       data: result,

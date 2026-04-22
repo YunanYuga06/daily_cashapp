@@ -107,6 +107,7 @@ export const updateUser = async (req, res, next) => {
 
       if (error) {
         throw new Error("Gagal mengunggah gambar ke Supabase: " + error.message);
+        print("debug error upload: ", error);
       }
 
       // 3. Dapatkan URL Publik dari file yang baru diupload
@@ -118,8 +119,8 @@ export const updateUser = async (req, res, next) => {
       requestData.image_url = publicUrlData.publicUrl;
     }
 
-    // 5. Simpan perubahan ke Database (Supabase PostgreSQL via Prisma)
-    const result = await userService.updateUser(req.user.username, requestData);
+    // KODE YANG BENAR
+    const result = await userService.updateUser(req.user.username, requestData);  
     
     return res.status(200).json({
       data: result,

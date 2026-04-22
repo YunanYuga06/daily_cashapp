@@ -10,8 +10,8 @@ import { errorMiddleware } from "../middlewares/error.middleware.js";
 export const web = express();
 
 web.use(cors());
-web.use(express.json());
-web.use(express.urlencoded({ extended: true }));
+web.use(express.json({ limit: '5mb' })); 
+web.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 // Static untuk gambar profile (opsional)
 const __dirname = path.resolve(path.dirname(""));

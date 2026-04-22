@@ -80,8 +80,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _saveProfile() async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
-
     try {
+      String? base64Image;
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
       if (token == null) throw Exception("Token tidak ditemukan");
@@ -101,6 +101,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         throw Exception("Gagal menyimpan data ke server.");
       }
     } catch (e) {
+      print("debug error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal menyimpan profil: $e')),

@@ -13,9 +13,12 @@ class ProfileModel {
     final String email;
     final String? imageUrl;
 
-    factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
-        name: json["name"],
-        email: json["email"],
-        imageUrl: json["image_url"],
-    );
+    factory ProfileModel.fromJson(Map<String, dynamic> json) {
+  return ProfileModel(
+    name: json['name']?.toString() ?? '',
+    email: json['email']?.toString() ?? '',
+    // GUNAKAN .toString() atau handle null secara eksplisit
+    imageUrl: json['photo']?.toString(), // Ini akan menjadi null (String?) jika di database null
+  );
+}
 }

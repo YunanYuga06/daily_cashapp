@@ -499,35 +499,27 @@ class ApiService {
   }
 
   static Future<bool> updateUserProfile({
-    required String token,
-    required String name,
-    File? imageFile,
-  }) async {
-    final url = Uri.parse('${Env.baseUrl}/users/current');
-    var request = http.MultipartRequest('PUT', url);
-    request.headers.addAll({
-      'Authorization': 'Bearer $token',
-      'ngrok-skip-browser-warning': 'true',
-    });
-    request.fields['name'] = name;
-    if (imageFile != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'profile_picture',
-          imageFile.path,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
-    }
-    final response = await request.send();
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      final respStr = await response.stream.bytesToString();
-      print('Gagal update: $respStr');
-      return false;
-    }
+  required String token,
+  required String name,
+  File? imageFile,
+}) async {
+  var request = http.MultipartRequest(
+    'PUT', // Atau POST sesuai route backend Anda
+    Uri.parse('${Env.baseUrl}/users/current'),
+  );
+
+  request.headers['Authorization'] = 'Bearer $token';
+  request.fields['name'] = name;
+
+  if (imageFile != null) {
+    request.files.add(await http.MultipartFile.fromPath('photo', imageFile.path));
   }
+
+  var streamedResponse = await request.send();
+  var response = await http.Response.fromStream(streamedResponse);
+
+  return response.statusCode == 200;
+}
   
   // --- FUNGSI REMINDER ---
   static Future<void> createReminder({

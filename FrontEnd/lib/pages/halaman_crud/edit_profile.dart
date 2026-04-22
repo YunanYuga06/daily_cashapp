@@ -92,21 +92,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
         imageFile: _imageFile,
       );
 
+      // Jika sukses, snackbar hijau muncul
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profil berhasil diperbarui!')),
         );
-        Navigator.pop(context, true); // Kirim 'true' untuk refresh halaman profil
-      } else {
-        throw Exception("Gagal menyimpan data ke server.");
+        Navigator.pop(context, true); 
       }
-    } catch (e) {
-      print("debug error: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan profil: $e')),
-        );
-      }
+      
+      // HAPUS blok "else { throw Exception(...) }" karena jika gagal, 
+      // error sudah dilempar langsung dari api.service.dart dan akan masuk ke catch di bawah.
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

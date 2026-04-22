@@ -18,7 +18,7 @@ class ProfileModel {
     name: json['name']?.toString() ?? '',
     email: json['email']?.toString() ?? '',
     // GUNAKAN .toString() atau handle null secara eksplisit
-    imageUrl: json['photo']?.toString(), // Ini akan menjadi null (String?) jika di database null
+    imageUrl: json['image_url']?.toString(), // Ini akan menjadi null (String?) jika di database null
   );
 }
 }

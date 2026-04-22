@@ -499,28 +499,53 @@ class ApiService {
   }
 
   static Future<bool> updateUserProfile({
-  required String token,
-  required String name,
-  File? imageFile,
-}) async {
-  var request = http.MultipartRequest(
-    'PUT', // Atau POST sesuai route backend Anda
-    Uri.parse('${Env.baseUrl}/users/current'),
-  );
+    required String token,
+    required String name,
+    File? imageFile,
+  }) async {
+    var request = http.MultipartRequest(
+      'PUT',
+      Uri.parse('${Env.baseUrl}/users/current'),
+    );
 
-  request.headers['Authorization'] = 'Bearer $token';
-  request.fields['name'] = name;
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['name'] = name;
 
-  // KODE YANG BENAR DI FLUTTER
-  if (imageFile != null) {
-    request.files.add(await http.MultipartFile.fromPath('profile_picture', imageFile.path));
+    // --- KODE YANG DIPERBARUI MULAI DARI SINI ---
+    if (imageFile != null) {
+      // 1. Ambil ekstensi file (misal: jpg, png, jpeg)
+      final ext = imageFile.path.split('.').last.toLowerCase();
+      
+      // 2. Tentukan tipe media (MIME Type) menggunakan library http_parser
+      final mediaType = (ext == 'png') 
+          ? MediaType('image', 'png') 
+          : MediaType('image', 'jpeg');
+
+      // 3. Tambahkan ke request dengan menyertakan contentType
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profile_picture', 
+          imageFile.path,
+          contentType: mediaType, // <-- KUNCI PENYELESAIANNYA
+        )
+      );
+    }
+    // --- KODE YANG DIPERBARUI SELESAI DI SINI ---
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      try {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['errors'] ?? 'Error ${response.statusCode}');
+      } catch (e) {
+        throw Exception('Backend Error: ${response.body}');
+      }
+    }
   }
-
-  var streamedResponse = await request.send();
-  var response = await http.Response.fromStream(streamedResponse);
-
-  return response.statusCode == 200;
-}
   
   // --- FUNGSI REMINDER ---
   static Future<void> createReminder({

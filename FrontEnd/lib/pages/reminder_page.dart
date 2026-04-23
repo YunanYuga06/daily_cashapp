@@ -1,3 +1,7 @@
+// lib/pages/reminder_page.dart
+// Step 2 refactor: modern card design, premium visual language.
+
+import 'package:daily_cashapp/config/app_theme.dart';
 import 'package:daily_cashapp/pages/halaman_crud/tambah_reminder.dart';
 import 'package:daily_cashapp/view/login.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +9,20 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/reminder_model.dart';
 import '../service/api.service.dart';
+
+// Map period string → color accent
+Color _periodColor(String period) {
+  switch (period.toLowerCase()) {
+    case 'harian':
+      return AppColors.secondary;
+    case 'mingguan':
+      return AppColors.primary;
+    case 'bulanan':
+      return AppColors.warning;
+    default:
+      return AppColors.textSecondary;
+  }
+}
 
 class ReminderPage extends StatefulWidget {
   const ReminderPage({super.key});
@@ -15,7 +33,7 @@ class ReminderPage extends StatefulWidget {
 
 class _ReminderPageState extends State<ReminderPage> {
   Future<List<ReminderModel>>? _remindersFuture;
-  DateTime _currentMonth = DateTime.now();
+  final DateTime _currentMonth = DateTime.now();
 
   @override
   void initState() {
@@ -25,52 +43,88 @@ class _ReminderPageState extends State<ReminderPage> {
 
   Future<void> _fetchReminders() async {
     if (!mounted) return;
-
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-
     if (token == null) {
-      if (mounted) {
-        setState(() {
-          _remindersFuture = null; 
-        });
-      }
+      setState(() => _remindersFuture = null);
       return;
     }
-
-    if (mounted) {
-      setState(() {
-        _remindersFuture = ApiService.getReminders(token, _currentMonth);
-      });
-    }
+    setState(() {
+      _remindersFuture = ApiService.getReminders(token, _currentMonth);
+    });
   }
 
   void _navigateAndRefresh() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const TambahReminderPage()),
+      MaterialPageRoute(builder: (_) => const TambahReminderPage()),
     );
-    if (result == true && mounted) {
-      _fetchReminders(); 
-    }
+    if (result == true && mounted) _fetchReminders();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.orange,
-        title: const Text('Reminder'),
-        elevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _navigateAndRefresh,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [_buildHeader(), Expanded(child: _buildBody())],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Reminder', style: AppTextStyles.heading1),
+              Text(
+                'Tagihan & pengingat keuangan',
+                style: AppTextStyles.bodySmall,
+              ),
+            ],
+          ),
+          const Spacer(),
+          InkWell(
+            onTap: _navigateAndRefresh,
+            borderRadius: AppRadius.smBR,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: AppRadius.smBR,
+                boxShadow: AppShadows.input,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.textOnPrimary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text('Tambah', style: AppTextStyles.buttonSmall),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: _buildBody(),
     );
   }
 
@@ -80,18 +134,20 @@ class _ReminderPageState extends State<ReminderPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text("Silakan login untuk melihat reminder."),
-            const SizedBox(height: 16),
+            Text(
+              'Silakan login untuk melihat reminder.',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                  (route) => false,
-                );
-              },
-              child: const Text("Login"),
-            )
+              onPressed:
+                  () => Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (r) => false,
+                  ),
+              child: const Text('Login'),
+            ),
           ],
         ),
       );
@@ -105,182 +161,321 @@ class _ReminderPageState extends State<ReminderPage> {
         }
         if (snapshot.hasError) {
           return Center(
-              child:
-                  Text('Gagal memuat data. Error: ${snapshot.error}'));
+            child: Text(
+              'Gagal memuat data.\n${snapshot.error}',
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(
             child: Text(
-              'Tidak ada pengingat untuk bulan ini.\nTekan tombol (+) untuk menambahkan.',
+              'Tidak ada pengingat untuk bulan ini.\nTekan Tambah untuk menambahkan.',
               textAlign: TextAlign.center,
             ),
           );
         }
 
         final reminders = snapshot.data!;
+
+        // Separate upcoming vs past
+        final now = DateTime.now();
+        final upcoming =
+            reminders.where((r) => !r.date.isBefore(now)).toList()
+              ..sort((a, b) => a.date.compareTo(b.date));
+        final past =
+            reminders.where((r) => r.date.isBefore(now)).toList()
+              ..sort((a, b) => b.date.compareTo(a.date));
+
         return RefreshIndicator(
+          color: AppColors.primary,
           onRefresh: _fetchReminders,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(8), 
-            itemCount: reminders.length,
-            itemBuilder: (context, index) {
-              final reminder = reminders[index];
-              
-              // 1. Bungkus Card dengan Dismissible untuk Swipe-to-Delete
-              return Dismissible(
-                key: Key(reminder.id.toString()),
-                direction: DismissDirection.endToStart,
-                
-                // Dialog Konfirmasi Hapus
-                confirmDismiss: (direction) async {
-                  return await showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text("Hapus Pengingat?"),
-                        content: Text("Yakin ingin menghapus pengingat '${reminder.description}'?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text("Batal"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                
-                // Aksi Hapus via API
-                onDismissed: (direction) async {
-                  final prefs = await SharedPreferences.getInstance();
-                  final token = prefs.getString('auth_token');
-                  
-                  if (token != null) {
-                    try {
-                      await ApiService.deleteReminder(token, reminder.id);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pengingat berhasil dihapus')),
-                        );
-                        _fetchReminders();
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Gagal menghapus: $e')),
-                        );
-                        _fetchReminders(); // Refresh list jika gagal
-                      }
-                    }
-                  }
-                },
-                
-                // Latar belakang merah saat di-swipe
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Samakan margin dengan Card
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.delete, color: Colors.white),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              80,
+            ),
+            children: [
+              if (upcoming.isNotEmpty) ...[
+                _SectionLabel(
+                  label: 'Akan Datang',
+                  icon: Icons.upcoming_rounded,
+                  color: AppColors.primary,
                 ),
-                
-                child: Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  // 2. Gunakan InkWell agar kartu bisa diklik untuk masuk ke Edit Mode
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12), // Sesuaikan efek ripple dengan sudut kartu
-                    onTap: () async {
-                      // Navigasi ke halaman form dengan mengirimkan data lama
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TambahReminderPage(existingReminder: reminder),
-                        ),
-                      );
-
-                      if (result == true && mounted) {
-                        _fetchReminders(); // Refresh jika ada data yang di-update
-                      }
-                    },
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // --- Bagian Kiri (Ikon) ---
-                          CircleAvatar(
-                            backgroundColor: Colors.amber.shade100,
-                            child: Icon(Icons.notifications_active,
-                                color: Colors.amber.shade800),
-                          ),
-                          const SizedBox(width: 12),
-
-                          // --- Bagian Tengah (Deskripsi dan Jumlah) ---
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  reminder.description,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 16),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Rp ${NumberFormat.decimalPattern('id').format(reminder.amount)}",
-                                  style: TextStyle(
-                                      color: Colors.grey.shade700, fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // --- Bagian Kanan (Tanggal dan Periode) ---
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                DateFormat('dd MMM yyyy', 'id')
-                                    .format(reminder.date),
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black54),
-                              ),
-                              const SizedBox(height: 5),
-                              Chip(
-                                label: Text(reminder.period),
-                                visualDensity: const VisualDensity(
-                                    horizontal: 0.0, vertical: -4),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                labelStyle: const TextStyle(fontSize: 10),
-                                backgroundColor: Colors.blue.shade50,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                ...upcoming.map(
+                  (r) => _ReminderCard(reminder: r, onChanged: _fetchReminders),
+                ),
+              ],
+              if (past.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _SectionLabel(
+                  label: 'Sudah Lewat',
+                  icon: Icons.history_rounded,
+                  color: AppColors.textSecondary,
+                ),
+                ...past.map(
+                  (r) => _ReminderCard(
+                    reminder: r,
+                    isPast: true,
+                    onChanged: _fetchReminders,
                   ),
                 ),
-              );
-            },
+              ],
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _SectionLabel({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Text(label, style: AppTextStyles.heading3.copyWith(color: color)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+class _ReminderCard extends StatelessWidget {
+  final ReminderModel reminder;
+  final bool isPast;
+  final VoidCallback onChanged;
+
+  const _ReminderCard({
+    required this.reminder,
+    this.isPast = false,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor =
+        isPast ? AppColors.textHint : _periodColor(reminder.period);
+    final daysLeft = reminder.date.difference(DateTime.now()).inDays;
+
+    return Dismissible(
+      key: Key('reminder_${reminder.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmDelete(context),
+      onDismissed: (_) => _deleteReminder(context),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.12),
+          borderRadius: AppRadius.cardBR,
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_rounded, color: AppColors.error),
+            const SizedBox(height: 2),
+            Text(
+              'Hapus',
+              style: AppTextStyles.caption.copyWith(color: AppColors.error),
+            ),
+          ],
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TambahReminderPage(existingReminder: reminder),
+            ),
+          );
+          if (result == true) onChanged();
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: AppDecorations.card(
+            color:
+                isPast
+                    ? AppColors.surface.withValues(alpha: 0.6)
+                    : AppColors.surface,
+          ),
+          child: Row(
+            children: [
+              // Bell icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.smBR,
+                ),
+                child: Icon(
+                  Icons.notifications_rounded,
+                  color: accentColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              // Description + amount
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reminder.description,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color:
+                            isPast
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rp ${NumberFormat.decimalPattern('id').format(reminder.amount)}',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        // Period chip
+                        _Chip(label: reminder.period, color: accentColor),
+                        const SizedBox(width: AppSpacing.xs),
+                        // Due date
+                        _Chip(
+                          label: DateFormat(
+                            'dd MMM',
+                            'id',
+                          ).format(reminder.date),
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              // Days left badge
+              if (!isPast)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        daysLeft <= 3
+                            ? AppColors.error.withValues(alpha: 0.12)
+                            : AppColors.primary.withValues(alpha: 0.10),
+                    borderRadius: AppRadius.smBR,
+                  ),
+                  child: Text(
+                    daysLeft == 0 ? 'Hari ini' : '$daysLeft hari',
+                    style: AppTextStyles.caption.copyWith(
+                      color:
+                          daysLeft <= 3 ? AppColors.error : AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context) => showDialog<bool>(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          title: const Text('Hapus Pengingat?'),
+          content: Text(
+            "Yakin ingin menghapus '${reminder.description}'?",
+            style: AppTextStyles.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Hapus', style: TextStyle(color: AppColors.error)),
+            ),
+          ],
+        ),
+  );
+
+  Future<void> _deleteReminder(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null) return;
+    try {
+      await ApiService.deleteReminder(token, reminder.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pengingat berhasil dihapus')),
+        );
+        onChanged();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
+        onChanged();
+      }
+    }
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _Chip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: AppDecorations.pill(color: color),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,3 @@
 class Env {
-  static const String baseUrl = ' ';
+  static const String baseUrl = 'https://daily-cashapp.vercel.app/api';
 }

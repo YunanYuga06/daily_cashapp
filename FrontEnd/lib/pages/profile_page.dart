@@ -27,7 +27,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _loadUserData() {
-    setState(() => _userFuture = _fetchUser());
+    setState(() {
+      _userFuture = _fetchUser();
+    });
   }
 
   Future<ProfileModel> _fetchUser() async {
@@ -90,22 +92,15 @@ class _ProfilePageState extends State<ProfilePage> {
           80,
         ),
         children: [
-          // ── Page title ──────────────────────────────────────────────
           Text('Profil', style: AppTextStyles.heading1),
           Text('Kelola akun Anda', style: AppTextStyles.bodySmall),
 
           const SizedBox(height: AppSpacing.lg),
-
-          // ── Profile hero card ────────────────────────────────────────
           _ProfileHeroCard(user: user),
 
           const SizedBox(height: AppSpacing.lg),
-
-          // ── Menu section label ────────────────────────────────────────
           Text('Pengaturan Akun', style: AppTextStyles.heading3),
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Menu items ────────────────────────────────────────────────
           _MenuCard(
             children: [
               _MenuItem(
@@ -137,8 +132,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           const SizedBox(height: AppSpacing.md),
-
-          // ── Danger zone ───────────────────────────────────────────────
           Text('Akun', style: AppTextStyles.heading3),
           const SizedBox(height: AppSpacing.sm),
 
@@ -160,9 +153,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Profile hero card
-// ─────────────────────────────────────────────────────────────────────────────
 class _ProfileHeroCard extends StatelessWidget {
   final ProfileModel user;
 
@@ -236,9 +226,6 @@ class _ProfileHeroCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Grouped menu card
-// ─────────────────────────────────────────────────────────────────────────────
 class _MenuCard extends StatelessWidget {
   final List<Widget> children;
 

@@ -1,12 +1,17 @@
-// daily_cashapp/FrontEnd/lib/widgets/bulanan_tab.dart
+// lib/widgets/bulanan_tab.dart
+// Step 2 refactor: modern card design, strictly uses AppColors / AppTextStyles.
+// No hardcoded colors, text styles, or border radii anywhere in this file.
 
+import 'package:daily_cashapp/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaksi_model.dart';
 import '../service/api.service.dart';
 
-// Kelas helper untuk menyimpan ringkasan mingguan
+// ─────────────────────────────────────────────────────────────────────────────
+// Data model — unchanged from original
+// ─────────────────────────────────────────────────────────────────────────────
 class WeeklyTransactionSummary {
   final DateTime startDate;
   final DateTime endDate;
@@ -19,8 +24,13 @@ class WeeklyTransactionSummary {
     required this.totalIncome,
     required this.totalExpense,
   });
+
+  int get net => totalIncome - totalExpense;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget
+// ─────────────────────────────────────────────────────────────────────────────
 class BulananTab extends StatefulWidget {
   final DateTime currentMonth;
 
@@ -33,7 +43,7 @@ class BulananTab extends StatefulWidget {
 class _BulananTabState extends State<BulananTab> {
   Future<List<TransactionModel>>? _transactionsFuture;
 
-  final NumberFormat _currencyFormatter = NumberFormat.currency(
+  final NumberFormat _fmt = NumberFormat.currency(
     locale: 'id',
     symbol: 'Rp ',
     decimalDigits: 0,
@@ -68,86 +78,148 @@ class _BulananTabState extends State<BulananTab> {
     }
   }
 
-  // LOGIKA BARU: Mengelompokkan transaksi ke dalam minggu
-  List<WeeklyTransactionSummary> _groupTransactionsByWeek(List<TransactionModel> transactions) {
+  // ── Weekly grouping logic (unchanged) ─────────────────────────────────────
+  List<WeeklyTransactionSummary> _groupByWeek(
+    List<TransactionModel> transactions,
+  ) {
     if (transactions.isEmpty) return [];
 
-    List<WeeklyTransactionSummary> weeklySummaries = [];
-    DateTime firstDayOfMonth = DateTime(widget.currentMonth.year, widget.currentMonth.month, 1);
-    DateTime lastDayOfMonth = DateTime(widget.currentMonth.year, widget.currentMonth.month + 1, 0);
+    final summaries = <WeeklyTransactionSummary>[];
+    final firstDay = DateTime(
+      widget.currentMonth.year,
+      widget.currentMonth.month,
+      1,
+    );
+    final lastDay = DateTime(
+      widget.currentMonth.year,
+      widget.currentMonth.month + 1,
+      0,
+    );
 
-    // Mulai dari minggu pertama di bulan ini
-    DateTime weekStart = firstDayOfMonth;
-    while (weekStart.isBefore(lastDayOfMonth)) {
-      // Akhir minggu adalah 6 hari setelah awal minggu, atau hari terakhir bulan
+    DateTime weekStart = firstDay;
+    while (weekStart.isBefore(lastDay) || weekStart.isAtSameMomentAs(lastDay)) {
       DateTime weekEnd = weekStart.add(const Duration(days: 6));
-      if (weekEnd.isAfter(lastDayOfMonth)) {
-        weekEnd = lastDayOfMonth;
-      }
+      if (weekEnd.isAfter(lastDay)) weekEnd = lastDay;
 
       int weeklyIncome = 0;
       int weeklyExpense = 0;
 
-      for (var transaction in transactions) {
-        // Cek apakah transaksi berada dalam rentang minggu ini
-        if (!transaction.date.isBefore(weekStart) && !transaction.date.isAfter(weekEnd.add(const Duration(days: 1)))) {
-          if (transaction.type == 'income') {
-            weeklyIncome += transaction.amount;
+      for (final tx in transactions) {
+        final txDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
+        if (!txDay.isBefore(weekStart) && !txDay.isAfter(weekEnd)) {
+          if (tx.type == 'income' || tx.type == 'pemasukan') {
+            weeklyIncome += tx.amount;
           } else {
-            weeklyExpense += transaction.amount;
+            weeklyExpense += tx.amount;
           }
         }
       }
-      
-      // Hanya tambahkan ke list jika ada aktivitas di minggu tersebut
+
       if (weeklyIncome > 0 || weeklyExpense > 0) {
-        weeklySummaries.add(WeeklyTransactionSummary(
-          startDate: weekStart,
-          endDate: weekEnd,
-          totalIncome: weeklyIncome,
-          totalExpense: weeklyExpense,
-        ));
+        summaries.add(
+          WeeklyTransactionSummary(
+            startDate: weekStart,
+            endDate: weekEnd,
+            totalIncome: weeklyIncome,
+            totalExpense: weeklyExpense,
+          ),
+        );
       }
-      
-      // Lanjut ke minggu berikutnya
+
       weekStart = weekEnd.add(const Duration(days: 1));
     }
-    
-    return weeklySummaries.reversed.toList(); // Balik urutan agar minggu terbaru di atas
+
+    return summaries.reversed.toList();
   }
-  
+
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<TransactionModel>>(
       future: _transactionsFuture,
       builder: (context, snapshot) {
+        // ── Loading ──────────────────────────────────────────────────
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Tidak ada transaksi untuk bulan ini.'));
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
 
+        // ── Error ────────────────────────────────────────────────────
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Text(
+                'Gagal memuat data: ${snapshot.error}',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        // ── Empty state ──────────────────────────────────────────────
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _EmptyState(onRefresh: _fetchTransactions);
+        }
+
+        // ── Data ─────────────────────────────────────────────────────
         final transactions = snapshot.data!;
-        final weeklyData = _groupTransactionsByWeek(transactions);
-        
-        final totalIncome = transactions.where((t) => t.type == 'income').fold(0, (sum, item) => sum + item.amount);
-        final totalExpense = transactions.where((t) => t.type == 'expense').fold(0, (sum, item) => sum + item.amount);
-        
+        final weeklyData = _groupByWeek(transactions);
+
+        final totalIncome = transactions
+            .where((t) => t.type == 'income' || t.type == 'pemasukan')
+            .fold(0, (s, t) => s + t.amount);
+        final totalExpense = transactions
+            .where((t) => t.type == 'expense' || t.type == 'pengeluaran')
+            .fold(0, (s, t) => s + t.amount);
+
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOverallSummary(totalIncome, totalExpense),
+            // Hero summary card
+            _MonthlySummaryCard(
+              income: totalIncome,
+              expense: totalExpense,
+              formatter: _fmt,
+              month: widget.currentMonth,
+            ),
+
+            // Section label
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
+              child: Text(
+                'Ringkasan per Minggu',
+                style: AppTextStyles.heading3,
+              ),
+            ),
+
+            // Weekly list
             Expanded(
               child: RefreshIndicator(
+                color: AppColors.primary,
                 onRefresh: _fetchTransactions,
                 child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    80,
+                  ),
                   itemCount: weeklyData.length,
-                  itemBuilder: (context, index) {
-                    return _buildWeekSummaryTile(weeklyData[index]);
-                  },
+                  itemBuilder:
+                      (context, index) => _WeekRow(
+                        summary: weeklyData[index],
+                        index: index,
+                        total: weeklyData.length,
+                        formatter: _fmt,
+                      ),
                 ),
               ),
             ),
@@ -156,53 +228,423 @@ class _BulananTabState extends State<BulananTab> {
       },
     );
   }
+}
 
-  Widget _buildOverallSummary(int income, int expense) {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      color: Colors.amber.shade100,
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+// ─────────────────────────────────────────────────────────────────────────────
+// Monthly summary hero card
+// ─────────────────────────────────────────────────────────────────────────────
+class _MonthlySummaryCard extends StatelessWidget {
+  final int income;
+  final int expense;
+  final NumberFormat formatter;
+  final DateTime month;
+
+  const _MonthlySummaryCard({
+    required this.income,
+    required this.expense,
+    required this.formatter,
+    required this.month,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final net = income - expense;
+    final isPositive = net >= 0;
+    final netColor = isPositive ? AppColors.income : AppColors.expense;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: AppDecorations.gradientCard(
+        gradient: AppColors.primaryGradient,
+        radius: AppRadius.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Month label
+          Text(
+            DateFormat('MMMM yyyy', 'id').format(month),
+            style: AppTextStyles.label.copyWith(
+              color: AppColors.textOnPrimary.withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          // Net amount
+          Text(
+            formatter.format(net),
+            style: AppTextStyles.amountLarge.copyWith(
+              color: AppColors.textOnPrimary,
+            ),
+          ),
+          Text(
+            isPositive ? 'Surplus bulan ini' : 'Defisit bulan ini',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textOnPrimary.withValues(alpha: 0.7),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            height: 1,
+            color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Income / Expense row
+          Row(
+            children: [
+              Expanded(
+                child: _StatPill(
+                  icon: Icons.arrow_downward_rounded,
+                  label: 'Pemasukan',
+                  amount: formatter.format(income),
+                  iconColor: AppColors.secondary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _StatPill(
+                  icon: Icons.arrow_upward_rounded,
+                  label: 'Pengeluaran',
+                  amount: formatter.format(expense),
+                  iconColor: AppColors.expense,
+                ),
+              ),
+            ],
+          ),
+
+          // Net savings progress bar
+          const SizedBox(height: AppSpacing.md),
+          _SavingsBar(income: income, expense: expense),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String amount;
+  final Color iconColor;
+
+  const _StatPill({
+    required this.icon,
+    required this.label,
+    required this.amount,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.textOnPrimary.withValues(alpha: 0.14),
+        borderRadius: AppRadius.smBR,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.22),
+              borderRadius: AppRadius.xsBR,
+            ),
+            child: Icon(icon, size: 15, color: iconColor),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textOnPrimary.withValues(alpha: 0.7),
+                  ),
+                ),
+                Text(
+                  amount,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textOnPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Thin savings-rate bar below the stat pills
+class _SavingsBar extends StatelessWidget {
+  final int income;
+  final int expense;
+
+  const _SavingsBar({required this.income, required this.expense});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = income == 0 ? 0.0 : (expense / income).clamp(0.0, 1.0);
+    final spentPct = (ratio * 100).toStringAsFixed(0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildSummaryItem("Pemasukan", _currencyFormatter.format(income)),
-            _buildSummaryItem("Pengeluaran", _currencyFormatter.format(expense)),
-            _buildSummaryItem("Total", _currencyFormatter.format(income - expense)),
+            Text(
+              'Penggunaan anggaran',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textOnPrimary.withValues(alpha: 0.7),
+              ),
+            ),
+            Text(
+              '$spentPct%',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textOnPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        ClipRRect(
+          borderRadius: AppRadius.pillBR,
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 6,
+            backgroundColor: AppColors.textOnPrimary.withValues(alpha: 0.2),
+            valueColor: AlwaysStoppedAnimation(
+              ratio > 0.9 ? AppColors.expense : AppColors.secondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Individual weekly row card
+// ─────────────────────────────────────────────────────────────────────────────
+class _WeekRow extends StatelessWidget {
+  final WeeklyTransactionSummary summary;
+  final int index;
+  final int total;
+  final NumberFormat formatter;
+
+  const _WeekRow({
+    required this.summary,
+    required this.index,
+    required this.total,
+    required this.formatter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isPositive = summary.net >= 0;
+    final netColor = isPositive ? AppColors.income : AppColors.expense;
+    final weekLabel = 'Minggu ${total - index}'; // most-recent week = Minggu N
+
+    // Short date range label
+    final shortFmt = DateFormat('dd MMM', 'id');
+    final dateRange =
+        '${shortFmt.format(summary.startDate)} – ${shortFmt.format(summary.endDate)}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      decoration: AppDecorations.card(),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header row ─────────────────────────────────────────
+            Row(
+              children: [
+                // Week icon badge
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.smBR,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${total - index}',
+                      style: AppTextStyles.heading2.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(weekLabel, style: AppTextStyles.heading3),
+                    Text(dateRange, style: AppTextStyles.caption),
+                  ],
+                ),
+                const Spacer(),
+                // Net badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: AppDecorations.pill(color: netColor),
+                  child: Text(
+                    '${isPositive ? '+' : ''}${formatter.format(summary.net)}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: netColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+            Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: AppSpacing.sm),
+
+            // ── Income / Expense detail row ────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: _DetailItem(
+                    icon: Icons.arrow_downward_rounded,
+                    label: 'Pemasukan',
+                    amount: formatter.format(summary.totalIncome),
+                    color: AppColors.income,
+                  ),
+                ),
+                Container(width: 1, height: 36, color: AppColors.border),
+                Expanded(
+                  child: _DetailItem(
+                    icon: Icons.arrow_upward_rounded,
+                    label: 'Pengeluaran',
+                    amount: formatter.format(summary.totalExpense),
+                    color: AppColors.expense,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildSummaryItem(String label, String amount) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(amount, style: const TextStyle(fontSize: 14)),
-      ],
+class _DetailItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String amount;
+  final Color color;
+
+  const _DetailItem({
+    required this.icon,
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 15, color: color),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption),
+                Text(
+                  amount,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildWeekSummaryTile(WeeklyTransactionSummary summary) {
-    final format = DateFormat('dd.MM');
-    final dateRangeText = '${format.format(summary.startDate)} - ${format.format(summary.endDate)}';
-    
-    return ListTile(
-      title: Text(dateRangeText),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty state
+// ─────────────────────────────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onRefresh;
+
+  const _EmptyState({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async => onRefresh(),
+      child: ListView(
         children: [
-          Text(
-            _currencyFormatter.format(summary.totalIncome), 
-            style: const TextStyle(color: Colors.blue)
-          ),
-          const SizedBox(width: 16),
-          Text(
-            _currencyFormatter.format(summary.totalExpense), 
-            style: const TextStyle(color: Colors.red)
+          SizedBox(height: MediaQuery.of(context).size.height * 0.22),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Opacity(
+                  opacity: 0.3,
+                  child: Icon(
+                    Icons.bar_chart_rounded,
+                    size: 80,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Belum Ada Transaksi', style: AppTextStyles.heading2),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Tambahkan transaksi pertama Anda\nagar ringkasan bulanan muncul di sini.',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ],
       ),

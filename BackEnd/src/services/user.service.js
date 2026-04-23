@@ -62,7 +62,7 @@ const login = async (request) => {
   }
 
   const token = jwt.sign({ username: user.email }, SECRET_KEY, {
-    expiresIn: "1h",
+    expiresIn: "30d",
   });
 
   return { token };

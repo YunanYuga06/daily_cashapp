@@ -36,7 +36,7 @@ class _TransaksiAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 52); // header + tab bar
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 60); // header + tab bar
 
   @override
   Widget build(BuildContext context) {

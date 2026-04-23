@@ -50,6 +50,8 @@ class HalamanAset extends StatefulWidget {
 class _HalamanAsetState extends State<HalamanAset> {
   Future<List<AssetModel>>? _assetsFuture;
 
+  bool _isLoading = true;
+
   final NumberFormat _fmt = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -64,13 +66,20 @@ class _HalamanAsetState extends State<HalamanAset> {
 
   Future<void> _fetchAssets() async {
     if (!mounted) return;
+    setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     if (token == null) {
-      setState(() => _assetsFuture = null);
+      setState(() {
+        _assetsFuture = null;
+        _isLoading = false;
+      });
       return;
     }
-    setState(() => _assetsFuture = ApiService.getAssets(token));
+    setState(() {
+      _assetsFuture = ApiService.getAssets(token);
+      _isLoading = false;
+    });
   }
 
   void _navigateAndRefresh() async {
@@ -150,6 +159,9 @@ class _HalamanAsetState extends State<HalamanAset> {
   }
 
   Widget _buildBody() {
+    // if (_isLoading) {
+    //   return const Center(child: CircularProgressIndicator());
+    // }
     if (_assetsFuture == null) {
       return Center(
         child: Column(

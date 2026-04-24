@@ -1,8 +1,3 @@
-// lib/pages/main_page.dart
-// Updated to support the floating pill bottom nav bar.
-// The Scaffold's extendBody = true lets the content scroll behind the
-// transparent gap below the floating nav container.
-
 import 'package:daily_cashapp/pages/profile_page.dart';
 import 'package:daily_cashapp/pages/reminder_page.dart';
 import 'package:daily_cashapp/pages/transaksi_page.dart';
@@ -30,7 +25,6 @@ class _HalamanUtamaState extends State<HalamanUtama> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Required so body content is visible under the floating nav bar
       extendBody: true,
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavBar(

@@ -1,7 +1,3 @@
-// lib/widgets/bulanan_tab.dart
-// Step 2 refactor: modern card design, strictly uses AppColors / AppTextStyles.
-// No hardcoded colors, text styles, or border radii anywhere in this file.
-
 import 'package:daily_cashapp/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,9 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaksi_model.dart';
 import '../service/api.service.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data model — unchanged from original
-// ─────────────────────────────────────────────────────────────────────────────
 class WeeklyTransactionSummary {
   final DateTime startDate;
   final DateTime endDate;
@@ -28,9 +21,6 @@ class WeeklyTransactionSummary {
   int get net => totalIncome - totalExpense;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget
-// ─────────────────────────────────────────────────────────────────────────────
 class BulananTab extends StatefulWidget {
   final DateTime currentMonth;
 
@@ -78,7 +68,6 @@ class _BulananTabState extends State<BulananTab> {
     }
   }
 
-  // ── Weekly grouping logic (unchanged) ─────────────────────────────────────
   List<WeeklyTransactionSummary> _groupByWeek(
     List<TransactionModel> transactions,
   ) {
@@ -132,20 +121,16 @@ class _BulananTabState extends State<BulananTab> {
     return summaries.reversed.toList();
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<TransactionModel>>(
       future: _transactionsFuture,
       builder: (context, snapshot) {
-        // ── Loading ──────────────────────────────────────────────────
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           );
         }
-
-        // ── Error ────────────────────────────────────────────────────
         if (snapshot.hasError) {
           return Center(
             child: Padding(
@@ -158,13 +143,10 @@ class _BulananTabState extends State<BulananTab> {
             ),
           );
         }
-
-        // ── Empty state ──────────────────────────────────────────────
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _EmptyState(onRefresh: _fetchTransactions);
         }
 
-        // ── Data ─────────────────────────────────────────────────────
         final transactions = snapshot.data!;
         final weeklyData = _groupByWeek(transactions);
 
@@ -230,9 +212,6 @@ class _BulananTabState extends State<BulananTab> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Monthly summary hero card
-// ─────────────────────────────────────────────────────────────────────────────
 class _MonthlySummaryCard extends StatelessWidget {
   final int income;
   final int expense;
@@ -391,7 +370,6 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-// Thin savings-rate bar below the stat pills
 class _SavingsBar extends StatelessWidget {
   final int income;
   final int expense;
@@ -405,45 +383,11 @@ class _SavingsBar extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Penggunaan anggaran',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textOnPrimary.withValues(alpha: 0.7),
-              ),
-            ),
-            Text(
-              '$spentPct%',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textOnPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        ClipRRect(
-          borderRadius: AppRadius.pillBR,
-          child: LinearProgressIndicator(
-            value: ratio,
-            minHeight: 6,
-            backgroundColor: AppColors.textOnPrimary.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation(
-              ratio > 0.9 ? AppColors.expense : AppColors.secondary,
-            ),
-          ),
-        ),
-      ],
+      children: [const SizedBox(height: AppSpacing.xs)],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Individual weekly row card
-// ─────────────────────────────────────────────────────────────────────────────
 class _WeekRow extends StatelessWidget {
   final WeeklyTransactionSummary summary;
   final int index;
@@ -476,10 +420,8 @@ class _WeekRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header row ─────────────────────────────────────────
             Row(
               children: [
-                // Week icon badge
                 Container(
                   width: 42,
                   height: 42,
@@ -526,8 +468,6 @@ class _WeekRow extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Divider(height: 1, color: AppColors.border),
             const SizedBox(height: AppSpacing.sm),
-
-            // ── Income / Expense detail row ────────────────────────
             Row(
               children: [
                 Expanded(
@@ -607,9 +547,6 @@ class _DetailItem extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty state
-// ─────────────────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final VoidCallback onRefresh;
 
